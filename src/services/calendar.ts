@@ -96,9 +96,10 @@ export async function getCalendarData(
           name,
           icon
         ),
-        account:accounts (
+        account:accounts!expenses_account_id_fkey (
           id,
-          name
+          name,
+          account_type
         ),
         paid_by_profile:profiles!expenses_paid_by_fkey (
           id,

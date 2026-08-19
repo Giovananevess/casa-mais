@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -63,19 +62,6 @@ type FormState = {
   notes: string;
 };
 
-function getToday() {
-  const now = new Date();
-
-  const localDate = new Date(
-    now.getTime() -
-      now.getTimezoneOffset() * 60_000
-  );
-
-  return localDate
-    .toISOString()
-    .slice(0, 10);
-}
-
 function createInitialState(
   options: ExpenseFormOptions,
   expense: ExpenseListItem
@@ -134,12 +120,14 @@ export function EditExpenseDialog({
   const [fieldErrors, setFieldErrors] =
     useState<Record<string, string[]>>({});
 
-  useEffect(() => {
-    if (!open) {
+  // Reset form when dialog closes
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setForm(initialState);
       setFieldErrors({});
     }
-  }, [initialState, open]);
+    setOpen(nextOpen);
+  };
 
   function updateField<K extends keyof FormState>(
     field: K,
@@ -238,7 +226,7 @@ export function EditExpenseDialog({
         open={open}
         onOpenChange={(nextOpen) => {
           if (!isSubmitting) {
-            setOpen(nextOpen);
+            handleOpenChange(nextOpen);
           }
         }}
       >

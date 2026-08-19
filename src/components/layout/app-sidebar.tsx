@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Banknote } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
@@ -21,6 +22,11 @@ const navigation = [
     href: "/dashboard",
     icon: LayoutDashboard,
   },
+  {
+  name: "Receitas",
+  href: "/receitas",
+  icon: Banknote,
+},
   {
     name: "Contas",
     href: "/contas",

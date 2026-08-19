@@ -1,15 +1,12 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarDays,
   CircleDollarSign,
-  CreditCard,
   FileText,
   Loader2,
   Plus,
@@ -141,12 +138,14 @@ export function NewExpenseDialog({
   const [fieldErrors, setFieldErrors] =
     useState<Record<string, string[]>>({});
 
-  useEffect(() => {
-    if (!open) {
+  // Reset form when dialog closes
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setForm(initialState);
       setFieldErrors({});
     }
-  }, [initialState, open]);
+    setOpen(nextOpen);
+  };
 
   function updateField<K extends keyof FormState>(
     field: K,
@@ -246,7 +245,7 @@ export function NewExpenseDialog({
         open={open}
         onOpenChange={(nextOpen) => {
           if (!isSubmitting) {
-            setOpen(nextOpen);
+            handleOpenChange(nextOpen);
           }
         }}
       >
@@ -346,6 +345,31 @@ export function NewExpenseDialog({
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="expense-purchase-date">
+                    Data da compra
+                  </Label>
+
+                  <Input
+                    id="expense-purchase-date"
+                    type="date"
+                    value={form.purchaseDate}
+                    onChange={(event) =>
+                      updateField(
+                        "purchaseDate",
+                        event.target.value
+                      )
+                    }
+                    disabled={isSubmitting}
+                  />
+
+                  {getError("purchaseDate") && (
+                    <p className="text-xs text-destructive">
+                      {getError("purchaseDate")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="expense-due-date">
                     Vencimento
                   </Label>
@@ -361,6 +385,7 @@ export function NewExpenseDialog({
                           event.target.value
                         )
                       }
+                      disabled={isSubmitting}
                     />
                   )}
 
@@ -372,11 +397,12 @@ export function NewExpenseDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>
+                  <Label htmlFor="expense-payment-method">
                     Forma de pagamento
                   </Label>
 
                   <select
+                    id="expense-payment-method"
                     value={form.paymentMethod}
                     onChange={(event) =>
                       updateField(
@@ -384,7 +410,8 @@ export function NewExpenseDialog({
                         event.target.value as FormState["paymentMethod"]
                       )
                     }
-                    className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    disabled={isSubmitting}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="cash">
                       Dinheiro
@@ -490,20 +517,21 @@ export function NewExpenseDialog({
                       )}
                     </select>
                   </div>
-                  {form.paymentMethod === "credit_card" && (
-                    <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
-                      <p className="text-sm font-medium">
-                        Compra no cartão de crédito
-                      </p>
-
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        O vencimento será calculado automaticamente
-                        usando o dia de fechamento e o vencimento do
-                        cartão selecionado.
-                      </p>
-                    </div>
-                  )}
                 </div>
+
+                {form.paymentMethod === "credit_card" && (
+                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 sm:col-span-2">
+                    <p className="text-sm font-medium">
+                      Compra no cartão de crédito
+                    </p>
+
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      O vencimento será calculado automaticamente
+                      usando o dia de fechamento e o vencimento do
+                      cartão selecionado.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="expense-description">

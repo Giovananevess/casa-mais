@@ -21,6 +21,7 @@ const expenseSelect = `
   title,
   description,
   amount,
+  purchase_date,
   due_date,
   status,
   expense_type,
@@ -28,23 +29,29 @@ const expenseSelect = `
   payment_method,
   notes,
   paid_at,
+  auto_paid,
   is_recurring,
   installment_group_id,
   installment_number,
   installment_total,
+
   category:categories (
     id,
     name,
     icon
   ),
-  account:accounts (
+
+  account:accounts!expenses_account_id_fkey (
     id,
-    name
+    name,
+    account_type
   ),
+
   paid_by_profile:profiles!expenses_paid_by_fkey (
     id,
     name
   ),
+
   attachments (
     id,
     expense_id,
@@ -140,17 +147,12 @@ async function getHouseholdId() {
   };
 }
 
-function applyHistoryFilters<
-  T extends {
-    gte: Function;
-    lte: Function;
-    eq: Function;
-    ilike: Function;
-  },
->(
-  query: T,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyHistoryFilters<T extends Record<string, any> = any>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  query: T | any,
   filters: HistoryFilters
-): T {
+): any {
   let filtered = query
     .gte("due_date", filters.startDate)
     .lte("due_date", filters.endDate);
@@ -216,12 +218,13 @@ function applyHistoryFilters<
   return filtered;
 }
 
-function applySort<T extends {
-  order: Function;
-}>(
-  query: T,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applySort<T extends Record<string, any> = any>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  query: T | any,
   filters: HistoryFilters
-): T {
+): any {
   if (filters.sort === "oldest") {
     return query
       .order("due_date", {

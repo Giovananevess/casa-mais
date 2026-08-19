@@ -2,7 +2,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  PiggyBank,
   Target,
 } from "lucide-react";
 
