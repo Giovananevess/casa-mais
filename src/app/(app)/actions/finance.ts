@@ -16,7 +16,14 @@ function refreshFinance() {
   revalidatePath("/contas-financeiras");
   revalidatePath("/historico");
   revalidatePath("/calendario");
+  revalidatePath("/configuracoes");
 }
+
+/*
+ * =====================================================
+ * CRIAR CONTA FINANCEIRA
+ * =====================================================
+ */
 
 export async function createFinancialAccountAction(
   input: unknown
@@ -29,6 +36,8 @@ export async function createFinancialAccountAction(
       success: false as const,
       message:
         "Revise os dados da conta.",
+      fieldErrors:
+        validation.error.flatten().fieldErrors,
     };
   }
 
@@ -39,26 +48,44 @@ export async function createFinancialAccountAction(
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userError || !user) {
     return {
       success: false as const,
-      message: "Sessão expirada.",
+      message:
+        "Sua sessão expirou. Entre novamente.",
     };
   }
 
-  const { data: membership } =
-    await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", user.id)
-      .single();
+  const {
+    data: membership,
+    error: membershipError,
+  } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    console.error(
+      "Erro ao buscar casa:",
+      membershipError
+    );
+
+    return {
+      success: false as const,
+      message:
+        membershipError.message,
+    };
+  }
 
   if (!membership) {
     return {
       success: false as const,
-      message: "Casa não encontrada.",
+      message:
+        "Casa não encontrada.",
     };
   }
 
@@ -93,26 +120,28 @@ export async function createFinancialAccountAction(
 
         closing_day:
           values.accountType ===
-          "credit_card"
+            "credit_card"
             ? values.closingDay
             : null,
 
         due_day:
           values.accountType ===
-          "credit_card"
+            "credit_card"
             ? values.dueDay
             : null,
 
         auto_payment:
           values.accountType ===
-          "credit_card"
+            "credit_card"
             ? values.autoPayment
             : false,
 
         auto_payment_account_id:
           values.accountType ===
-          "credit_card"
-            ? values.autoPaymentAccountId
+            "credit_card" &&
+            values.autoPayment
+            ? values.autoPaymentAccountId ||
+            null
             : null,
 
         is_benefit: isBenefit,
@@ -121,6 +150,11 @@ export async function createFinancialAccountAction(
       });
 
   if (error) {
+    console.error(
+      "Erro ao criar conta financeira:",
+      error
+    );
+
     return {
       success: false as const,
       message: error.message,
@@ -132,19 +166,28 @@ export async function createFinancialAccountAction(
   return {
     success: true as const,
     message:
-      "Conta financeira criada.",
+      "Conta financeira criada com sucesso.",
   };
 }
 
+/*
+ * =====================================================
+ * CRIAR RECEITA
+ * =====================================================
+ */
+
 export async function createIncomeAction(
+
   input: unknown
 ) {
-  const validation = incomeSchema.safeParse(input);
+  const validation =
+    incomeSchema.safeParse(input);
 
   if (!validation.success) {
     return {
       success: false as const,
-      message: "Revise os dados da receita.",
+      message:
+        "Revise os dados da receita.",
       fieldErrors:
         validation.error.flatten().fieldErrors,
     };
@@ -152,29 +195,19 @@ export async function createIncomeAction(
 
   const values = validation.data;
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userError || !user) {
     return {
       success: false as const,
-      message: "Sessão expirada.",
-    };
-  }
-
-  const { data: membership } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!membership) {
-    return {
-      success: false as const,
-      message: "Casa não encontrada.",
+      message:
+        "Sua sessão expirou. Entre novamente.",
     };
   }
 
@@ -183,54 +216,147 @@ export async function createIncomeAction(
     "food_voucher",
   ].includes(values.incomeType);
 
-  const { data, error } = await supabase
-    .from("income")
-    .insert({
-      household_id: membership.household_id,
-      user_id: values.userId,
-      account_id: values.accountId || null,
-      income_type: values.incomeType,
-      description: values.description,
-      amount: values.amount,
-      received_date: values.receivedDate,
-      is_benefit: isBenefit,
-      is_recurring: values.recurring,
-      day_of_month: values.dayOfMonth ?? null,
-    })
-    .select()
-    .single();
+  /*
+   * =====================================================
+   * 1. CRIA A REGRA DE RECORRÊNCIA
+   * =====================================================
+   *
+   * day_of_month pertence SOMENTE
+   * à tabela recurring_income.
+   */
 
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
+  let recurringIncomeId: string | null = null;
+
+  if (values.recurring) {
+    const {
+      data: recurringData,
+      error: recurringError,
+    } = await supabase.rpc(
+      "create_recurring_income",
+      {
+        p_user_id:
+          values.userId,
+
+        p_account_id:
+          values.accountId || null,
+
+        p_income_type:
+          values.incomeType,
+
+        p_description:
+          values.description,
+
+        p_amount:
+          values.amount,
+
+        p_day_of_month:
+          values.dayOfMonth ??
+          Number(
+            values.receivedDate.slice(
+              8,
+              10
+            )
+          ),
+
+        p_is_benefit:
+          isBenefit,
+
+        p_start_date:
+          values.receivedDate,
+
+        p_end_date: null,
+      }
+    );
+
+    if (recurringError) {
+      console.error(
+        "Erro ao criar receita recorrente:",
+        recurringError
+      );
+
+      if (
+        recurringError.code === "23505"
+      ) {
+        return {
+          success: false as const,
+          message:
+            "Já existe uma receita recorrente igual para essa pessoa. Edite a recorrência em Configurações.",
+        };
+      }
+
+      return {
+        success: false as const,
+        message:
+          recurringError.message,
+      };
+    }
+
+    recurringIncomeId =
+      recurringData
+        ? String(recurringData)
+        : null;
   }
 
-  // If an account was provided, update its current balance
-  if (values.accountId) {
-    const { data: account } = await supabase
-      .from("accounts")
-      .select("current_balance")
-      .eq("id", values.accountId)
-      .single();
+  /*
+   * =====================================================
+   * 2. CRIA A RECEITA DESTE MÊS
+   * =====================================================
+   *
+   * NÃO envia day_of_month.
+   */
 
-    if (account) {
-      const newBalance =
-        Number(account.current_balance) + Number(values.amount);
+  const {
+    error: incomeError,
+  } = await supabase.rpc(
+    "create_household_income",
+    {
+      p_user_id:
+        values.userId,
 
-      await supabase
-        .from("accounts")
-        .update({ current_balance: newBalance })
-        .eq("id", values.accountId);
+      p_account_id:
+        values.accountId || null,
+
+      p_income_type:
+        values.incomeType,
+
+      p_description:
+        values.description,
+
+      p_amount:
+        values.amount,
+
+      p_received_date:
+        values.receivedDate,
+
+      p_is_benefit:
+        isBenefit,
+
+      p_recurring_income_id:
+        recurringIncomeId,
     }
+  );
+
+  if (incomeError) {
+    console.error(
+      "Erro ao criar receita:",
+      incomeError
+    );
+
+    return {
+      success: false as const,
+      message:
+        incomeError.message,
+    };
   }
 
   refreshFinance();
 
   return {
     success: true as const,
-    message: "Receita registrada.",
-    incomeId: data?.id ?? null,
+
+    message:
+      values.recurring
+        ? "Receita cadastrada e recorrência mensal criada."
+        : "Receita cadastrada com sucesso.",
   };
 }
