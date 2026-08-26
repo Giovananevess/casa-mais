@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Settings,
   Sparkles,
+  PiggyBank,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +23,11 @@ const navigation = [
     href: "/dashboard",
     icon: LayoutDashboard,
   },
+  {
+  name: "Caixinhas",
+  href: "/caixinhas",
+  icon: PiggyBank,
+},
   {
   name: "Receitas",
   href: "/receitas",

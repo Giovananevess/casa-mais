@@ -5,6 +5,13 @@ import {
   WalletCards,
 } from "lucide-react";
 
+import {
+  MoneyBoxSummary,
+} from "@/components/dashboard/money-box-summary";
+
+import {
+  getMoneyBoxes,
+} from "@/services/money-boxes";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { PaymentsByPerson } from "@/components/dashboard/payments-by-person";
@@ -83,6 +90,7 @@ const [
   expenseOptions,
   timeline,
   insights,
+  moneyBoxes,
 ] = await Promise.all([
   measure(
     "Dashboard atual",
@@ -108,6 +116,9 @@ const [
     "Financial insights",
     () => getFinancialInsights()
   ),
+
+  getMoneyBoxes(),
+
 ]);
 
 const previousMonth =

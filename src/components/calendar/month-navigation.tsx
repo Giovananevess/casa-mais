@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+
 import {
   changeMonth,
   getCurrentMonthString,
@@ -51,6 +52,7 @@ export function MonthNavigation({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button
+          nativeButton={false}
           variant="outline"
           size="icon"
           render={
@@ -60,7 +62,7 @@ export function MonthNavigation({
             />
           }
         >
-          <ChevronLeft />
+          <ChevronLeft className="size-4" />
         </Button>
 
         <div className="flex h-10 min-w-52 items-center justify-center gap-2 rounded-xl border bg-card px-4 text-sm font-medium shadow-sm">
@@ -70,6 +72,7 @@ export function MonthNavigation({
         </div>
 
         <Button
+          nativeButton={false}
           variant="outline"
           size="icon"
           render={
@@ -79,21 +82,23 @@ export function MonthNavigation({
             />
           }
         >
-          <ChevronRight />
+          <ChevronRight className="size-4" />
         </Button>
 
-        {referenceMonth !== currentMonth && (
-          <Button
-            variant="outline"
-            render={
-              <Link
-                href={`/calendario?month=${currentMonth}`}
-              />
-            }
-          >
-            Hoje
-          </Button>
-        )}
+        {referenceMonth !==
+          currentMonth && (
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={
+                <Link
+                  href={`/calendario?month=${currentMonth}`}
+                />
+              }
+            >
+              Hoje
+            </Button>
+          )}
       </div>
     </section>
   );

@@ -1,15 +1,22 @@
-import { createClient } from "@/lib/supabase/server";
 import {
   getMonthDateRange,
   getLocalDateString,
 } from "@/lib/calendar";
-import { getExpenseFormOptions } from "@/services/expenses";
+
+import {
+  getExpenseFormOptions,
+} from "@/services/expenses";
+
+import {
+  getHouseholdContext,
+} from "@/services/household-context";
 
 import type {
   CalendarExpense,
   CalendarMonthSummary,
   CalendarPageData,
 } from "@/types/calendar";
+
 import type {
   ExpenseListItem,
   ExpenseStatus,
@@ -21,7 +28,7 @@ function getDisplayStatus(
   if (
     expense.status === "pending" &&
     expense.due_date <
-      getLocalDateString(new Date())
+    getLocalDateString(new Date())
   ) {
     return "overdue";
   }
@@ -32,41 +39,17 @@ function getDisplayStatus(
 export async function getCalendarData(
   referenceMonth: string
 ): Promise<CalendarPageData> {
-  const supabase = await createClient();
+  const {
+    supabase,
+    householdId,
+  } = await getHouseholdContext();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error(
-      "Usuário não autenticado."
-    );
-  }
-
-  const {
-    data: membership,
-    error: membershipError,
-  } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (membershipError) {
-    throw new Error(
-      `Erro ao consultar a casa: ${membershipError.message}`
-    );
-  }
-
-  if (!membership) {
-    throw new Error(
-      "O usuário não pertence a uma casa."
-    );
-  }
-
-  const { startDate, endDate } =
-    getMonthDateRange(referenceMonth);
+    startDate,
+    endDate,
+  } = getMonthDateRange(
+    referenceMonth
+  );
 
   const [
     expensesResult,
@@ -91,20 +74,24 @@ export async function getCalendarData(
         installment_group_id,
         installment_number,
         installment_total,
+
         category:categories (
           id,
           name,
           icon
         ),
+
         account:accounts!expenses_account_id_fkey (
           id,
           name,
           account_type
         ),
+
         paid_by_profile:profiles!expenses_paid_by_fkey (
           id,
           name
         ),
+
         attachments (
           id,
           expense_id,
@@ -117,17 +104,32 @@ export async function getCalendarData(
       `)
       .eq(
         "household_id",
-        membership.household_id
+        householdId
       )
-      .gte("due_date", startDate)
-      .lt("due_date", endDate)
-      .neq("status", "cancelled")
-      .order("due_date", {
-        ascending: true,
-      })
-      .order("created_at", {
-        ascending: true,
-      }),
+      .gte(
+        "due_date",
+        startDate
+      )
+      .lt(
+        "due_date",
+        endDate
+      )
+      .neq(
+        "status",
+        "cancelled"
+      )
+      .order(
+        "due_date",
+        {
+          ascending: true,
+        }
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true,
+        }
+      ),
 
     getExpenseFormOptions(),
   ]);
@@ -143,45 +145,63 @@ export async function getCalendarData(
   ).map((expense) => {
     const normalized = {
       ...expense,
-      amount: Number(expense.amount),
+      amount: Number(
+        expense.amount
+      ),
     } as unknown as ExpenseListItem;
 
     return {
       ...normalized,
+
       display_status:
-        getDisplayStatus(normalized),
+        getDisplayStatus(
+          normalized
+        ),
     };
   }) as CalendarExpense[];
 
   const summary =
     expenses.reduce<CalendarMonthSummary>(
-      (current, expense) => {
+      (
+        current,
+        expense
+      ) => {
         const amount =
-          Number(expense.amount);
+          Number(
+            expense.amount
+          );
 
-        current.total += amount;
-        current.expenseCount += 1;
+        current.total +=
+          amount;
+
+        current.expenseCount +=
+          1;
 
         if (
           expense.display_status ===
           "paid"
         ) {
-          current.paid += amount;
-          current.paidCount += 1;
+          current.paid +=
+            amount;
+
+          current.paidCount +=
+            1;
         }
 
         if (
           expense.display_status ===
           "pending"
         ) {
-          current.pending += amount;
+          current.pending +=
+            amount;
         }
 
         if (
           expense.display_status ===
           "overdue"
         ) {
-          current.overdue += amount;
+          current.overdue +=
+            amount;
         }
 
         return current;

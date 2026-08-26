@@ -9,11 +9,13 @@ import { getGoalMembers } from "@/services/goals";
 import { CreateAccountDialog } from "@/components/finance/create-account-dialog";
 import { getFinancialAccounts } from "@/services/finance";
 export default async function FinancialAccountsPage() {
-  const [accounts, members] =
-  await Promise.all([
-    getFinancialAccounts(),
-    getGoalMembers(),
-  ]);
+const [
+  members,
+  accounts,
+] = await Promise.all([
+  getGoalMembers(),
+  getFinancialAccounts(),
+]);
 
   return (
     <div className="space-y-8 pb-8">
@@ -33,18 +35,20 @@ export default async function FinancialAccountsPage() {
       </section>
 
       <section className="flex justify-end">
-        <CreateAccountDialog members={members} />
-      </section>
+        <CreateAccountDialog
+          members={members}
+          existingAccounts={accounts}
+        />      </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {accounts.map(
           (account) => {
             const Icon =
               account.account_type ===
-              "credit_card"
+                "credit_card"
                 ? CreditCard
                 : account.account_type ===
-                    "cash"
+                  "cash"
                   ? WalletCards
                   : Landmark;
 
@@ -71,27 +75,27 @@ export default async function FinancialAccountsPage() {
 
                 {account.account_type !==
                   "credit_card" && (
-                  <p className="mt-3 text-2xl font-semibold">
-                    {formatCurrency(
-                      account.current_balance
-                    )}
-                  </p>
-                )}
+                    <p className="mt-3 text-2xl font-semibold">
+                      {formatCurrency(
+                        account.current_balance
+                      )}
+                    </p>
+                  )}
 
                 {account.account_type ===
                   "credit_card" && (
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    <p>
-                      Fecha dia{" "}
-                      {account.closing_day}
-                    </p>
+                    <div className="mt-4 text-sm text-muted-foreground">
+                      <p>
+                        Fecha dia{" "}
+                        {account.closing_day}
+                      </p>
 
-                    <p className="mt-1">
-                      Vence dia{" "}
-                      {account.due_day}
-                    </p>
-                  </div>
-                )}
+                      <p className="mt-1">
+                        Vence dia{" "}
+                        {account.due_day}
+                      </p>
+                    </div>
+                  )}
               </article>
             );
           }

@@ -1,84 +1,88 @@
-import { createClient } from "@/lib/supabase/server";
+import {
+  getHouseholdContext,
+} from "@/services/household-context";
 
 import type {
   FinancialAccount,
   IncomeItem,
 } from "@/types/finance";
 
-async function getContext() {
-  const supabase =
-    await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error(
-      "Usuário não autenticado."
-    );
-  }
-
-  const { data: membership } =
-    await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", user.id)
-      .single();
-
-  if (!membership) {
-    throw new Error(
-      "Casa não encontrada."
-    );
-  }
-
-  return {
-    supabase,
-    user,
-    householdId:
-      membership.household_id,
-  };
-}
+/*
+ * =====================================================
+ * CONTAS FINANCEIRAS
+ * =====================================================
+ */
 
 export async function getFinancialAccounts():
 Promise<FinancialAccount[]> {
   const {
     supabase,
     householdId,
-  } = await getContext();
+  } = await getHouseholdContext();
 
-  const { data, error } =
-    await supabase
-      .from("accounts")
-      .select("*")
-      .eq(
-        "household_id",
-        householdId
-      )
-      .eq("is_active", true)
-      .order("name");
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("accounts")
+    .select(`
+      id,
+      household_id,
+      name,
+      account_type,
+      institution,
+      owner_user_id,
+      initial_balance,
+      current_balance,
+      closing_day,
+      due_day,
+      auto_payment,
+      auto_payment_account_id,
+      is_benefit,
+      is_active,
+      created_at,
+      updated_at
+    `)
+    .eq(
+      "household_id",
+      householdId
+    )
+    .eq(
+      "is_active",
+      true
+    )
+    .order("name");
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      `Erro ao carregar contas financeiras: ${error.message}`
+    );
   }
 
-  return (data ?? []).map(
-    (account) => ({
-      ...account,
+  return (
+    data ?? []
+  ).map((account) => ({
+    ...account,
 
-      initial_balance:
-        Number(
-          account.initial_balance
-        ),
+    initial_balance:
+      Number(
+        account.initial_balance ??
+        0
+      ),
 
-      current_balance:
-        Number(
-          account.current_balance
-        ),
-    })
-  ) as FinancialAccount[];
+    current_balance:
+      Number(
+        account.current_balance ??
+        0
+      ),
+  })) as FinancialAccount[];
 }
 
+/*
+ * =====================================================
+ * RECEITAS DO MÊS
+ * =====================================================
+ */
 
 export async function getIncomeForMonth(
   month?: string
@@ -86,83 +90,95 @@ export async function getIncomeForMonth(
   const {
     supabase,
     householdId,
-  } = await getContext();
+  } = await getHouseholdContext();
 
+  /*
+   * Formato:
+   * 2026-08
+   */
   const reference =
     month ??
     new Date()
       .toISOString()
       .slice(0, 7);
 
-  const start =
+  /*
+   * A tabela income já possui
+   * reference_month.
+   *
+   * Portanto é mais simples e
+   * eficiente consultar diretamente
+   * por ela do que fazer:
+   *
+   * received_date >= início
+   * received_date < próximo mês
+   */
+  const referenceMonth =
     `${reference}-01`;
 
-  const [year, monthNumber] =
-    reference
-      .split("-")
-      .map(Number);
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("income")
+    .select(`
+      id,
+      household_id,
+      user_id,
+      account_id,
+      income_type,
+      description,
+      amount,
+      received_date,
+      reference_month,
+      is_received,
+      is_benefit,
+      is_recurring,
+      recurring_income_id,
 
-  const next = new Date(
-    Date.UTC(
-      year,
-      monthNumber,
-      1
-    )
-  )
-    .toISOString()
-    .slice(0, 10);
-
-  const { data, error } =
-    await supabase
-      .from("income")
-      .select(`
+      profile:profiles!income_user_id_fkey (
         id,
-        user_id,
-        account_id,
-        income_type,
-        description,
-        amount,
-        received_date,
-        is_benefit,
-        is_recurring,
+        name
+      ),
 
-        profile:profiles!income_user_id_fkey (
-          id,
-          name
-        ),
-
-        account:accounts!income_account_id_fkey (
-          id,
-          name
-        )
-      `)
-      .eq(
-        "household_id",
-        householdId
+      account:accounts!income_account_id_fkey (
+        id,
+        name
       )
-      .gte(
-        "received_date",
-        start
-      )
-      .lt(
-        "received_date",
-        next
-      )
-      .order(
-        "received_date",
-        {
-          ascending: false,
-        }
-      );
+    `)
+    .eq(
+      "household_id",
+      householdId
+    )
+    .eq(
+      "reference_month",
+      referenceMonth
+    )
+    .eq(
+      "is_received",
+      true
+    )
+    .order(
+      "received_date",
+      {
+        ascending: false,
+      }
+    );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      `Erro ao carregar receitas: ${error.message}`
+    );
   }
 
-  return (data ?? []).map(
-    (item) => ({
-      ...item,
-      amount: Number(item.amount),
-    })
-  ) as unknown as IncomeItem[];
+  return (
+    data ?? []
+  ).map((item) => ({
+    ...item,
+
+    amount:
+      Number(
+        item.amount
+      ),
+  })) as unknown as IncomeItem[];
 }
