@@ -4,40 +4,67 @@ import {
 } from "lucide-react";
 
 import { ExpensesList } from "@/components/expenses/expenses-list";
+import { GenerateRecurringButton } from "@/components/expenses/generate-recurring-button";
+import { InstallmentsDialog } from "@/components/expenses/installments-dialog";
 import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
+import { RecurringExpenseDialog } from "@/components/expenses/recurring-expense-dialog";
+
 import { formatCurrency } from "@/lib/currency";
+
 import {
   getExpenseFormOptions,
   getExpenses,
 } from "@/services/expenses";
-import { InstallmentsDialog } from "@/components/expenses/installments-dialog";
-import { RecurringExpenseDialog } from "@/components/expenses/recurring-expense-dialog";
-import { GenerateRecurringButton } from "@/components/expenses/generate-recurring-button";
 
 export default async function ExpensesPage() {
-  const [expenses, options] =
-    await Promise.all([
-      getExpenses(),
-      getExpenseFormOptions(),
-    ]);
+  const [
+    expenses,
+    options,
+  ] = await Promise.all([
+    getExpenses(),
+    getExpenseFormOptions(),
+  ]);
 
-  const total = expenses.reduce(
-    (sum, expense) =>
-      sum + Number(expense.amount),
-    0
-  );
-
-  const pending = expenses
-    .filter(
-      (expense) =>
-        expense.status === "pending" ||
-        expense.status === "overdue"
-    )
-    .reduce(
-      (sum, expense) =>
-        sum + Number(expense.amount),
+  /*
+   * O resumo continua usando TODAS
+   * as parcelas individualmente.
+   *
+   * Isso é importante porque o
+   * agrupamento é somente visual.
+   */
+  const total =
+    expenses.reduce(
+      (
+        sum,
+        expense
+      ) =>
+        sum +
+        Number(
+          expense.amount
+        ),
       0
     );
+
+  const pending =
+    expenses
+      .filter(
+        (expense) =>
+          expense.status ===
+            "pending" ||
+          expense.status ===
+            "overdue"
+      )
+      .reduce(
+        (
+          sum,
+          expense
+        ) =>
+          sum +
+          Number(
+            expense.amount
+          ),
+        0
+      );
 
   return (
     <div className="space-y-8 pb-8">
@@ -52,26 +79,26 @@ export default async function ExpensesPage() {
           </h1>
 
           <p className="mt-2 text-muted-foreground">
-            Cadastre e acompanhe todas as
-            despesas de vocês.
+            Cadastre e acompanhe todas
+            as despesas de vocês.
           </p>
         </div>
 
         <div className="flex flex-wrap justify-end gap-3">
-  <GenerateRecurringButton />
+          <GenerateRecurringButton />
 
-  <RecurringExpenseDialog
-    options={options}
-  />
+          <RecurringExpenseDialog
+            options={options}
+          />
 
-  <InstallmentsDialog
-    options={options}
-  />
+          <InstallmentsDialog
+            options={options}
+          />
 
-  <NewExpenseDialog
-    options={options}
-  />
-</div>
+          <NewExpenseDialog
+            options={options}
+          />
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -83,7 +110,9 @@ export default async function ExpensesPage() {
               </p>
 
               <p className="mt-3 text-2xl font-semibold">
-                {formatCurrency(total)}
+                {formatCurrency(
+                  total
+                )}
               </p>
             </div>
 
@@ -101,7 +130,9 @@ export default async function ExpensesPage() {
               </p>
 
               <p className="mt-3 text-2xl font-semibold">
-                {formatCurrency(pending)}
+                {formatCurrency(
+                  pending
+                )}
               </p>
             </div>
 
@@ -113,9 +144,9 @@ export default async function ExpensesPage() {
       </section>
 
       <ExpensesList
-  expenses={expenses}
-  options={options}
-/>
+        expenses={expenses}
+        options={options}
+      />
     </div>
   );
 }
