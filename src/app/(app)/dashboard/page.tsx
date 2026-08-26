@@ -4,26 +4,29 @@ import {
   PiggyBank,
   WalletCards,
 } from "lucide-react";
-import { runFinancialAutomations } from "@/services/financial-automations";
+
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { PaymentsByPerson } from "@/components/dashboard/payments-by-person";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { UpcomingExpenses } from "@/components/dashboard/upcoming-expenses";
+import { FinancialTimeline } from "@/components/dashboard/financial-timeline";
+import { FinancialInsights } from "@/components/dashboard/financial-insights";
+import { measure } from "@/lib/performace";
+import {
+  FinancialAutomationTrigger,
+} from "@/components/finance/financial-automation-trigger";
+
+import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
+
 import { formatCurrency } from "@/lib/currency";
 import { createClient } from "@/lib/supabase/server";
-import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
+
 import { getExpenseFormOptions } from "@/services/expenses";
 import {
   getDashboardSummary,
   getDashboardTrend,
 } from "@/services/dashboard";
-
-import { after } from "next/server";
-
-import { FinancialTimeline } from "@/components/dashboard/financial-timeline";
-import { FinancialInsights } from "@/components/dashboard/financial-insights";
-
 import { getTimeline } from "@/services/timeline";
 import { getFinancialInsights } from "@/services/insights";
 
@@ -57,16 +60,7 @@ function calculateVariation(
 }
 
 export default async function DashboardPage() {
-  after(async () => {
-    try {
-      await runFinancialAutomations();
-    } catch (error) {
-      console.error(
-        "Erro nas automações financeiras:",
-        error
-      );
-    }
-  }); const supabase = await createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -83,26 +77,52 @@ export default async function DashboardPage() {
     user?.email?.split("@")[0] ??
     "Usuário";
 
-  const currentDashboard =
-    await getDashboardSummary();
+const [
+  currentDashboard,
+  trend,
+  expenseOptions,
+  timeline,
+  insights,
+] = await Promise.all([
+  measure(
+    "Dashboard atual",
+    () => getDashboardSummary()
+  ),
 
-  const previousMonth = getPreviousMonth(
+  measure(
+    "Dashboard trend",
+    () => getDashboardTrend()
+  ),
+
+  measure(
+    "Expense options",
+    () => getExpenseFormOptions()
+  ),
+
+  measure(
+    "Timeline",
+    () => getTimeline(20)
+  ),
+
+  measure(
+    "Financial insights",
+    () => getFinancialInsights()
+  ),
+]);
+
+const previousMonth =
+  getPreviousMonth(
     currentDashboard.reference_month
   );
 
-  const [
-    previousDashboard,
-    trend,
-    expenseOptions,
-    timeline,
-    insights,
-  ] = await Promise.all([
-    getDashboardSummary(previousMonth),
-    getDashboardTrend(),
-    getExpenseFormOptions(),
-    getTimeline(20),
-    getFinancialInsights(),
-  ]);
+const previousDashboard =
+  await measure(
+    "Dashboard anterior",
+    () =>
+      getDashboardSummary(
+        previousMonth
+      )
+  );
 
   const summary = currentDashboard.summary;
   const previousSummary =
@@ -128,13 +148,15 @@ export default async function DashboardPage() {
     Number(previousSummary.savings)
   );
 
-  return (
-    <div className="space-y-6 pb-8">
-      <section className="flex justify-end">
-        <NewExpenseDialog
-          options={expenseOptions}
-        />
-      </section>
+return (
+  <div className="space-y-6 pb-8">
+    <FinancialAutomationTrigger />
+
+    <section className="flex justify-end">
+      <NewExpenseDialog
+        options={expenseOptions}
+      />
+    </section>
       <DashboardHero
         name={name}
         referenceMonth={
