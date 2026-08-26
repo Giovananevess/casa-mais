@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import {
   createHistorySearchParams,
   getDefaultHistoryPeriod,
@@ -31,9 +32,12 @@ export function HistoryFiltersComponent({
   options,
 }: HistoryFiltersProps) {
   const exportParams =
-    createHistorySearchParams(filters, {
-      page: 1,
-    });
+    createHistorySearchParams(
+      filters,
+      {
+        page: 1,
+      }
+    );
 
   const defaults =
     getDefaultHistoryPeriod();
@@ -57,6 +61,7 @@ export function HistoryFiltersComponent({
 
         <div className="flex flex-wrap gap-2">
           <Button
+            nativeButton={false}
             variant="outline"
             render={
               <a
@@ -64,18 +69,21 @@ export function HistoryFiltersComponent({
               />
             }
           >
-            <RotateCcw />
+            <RotateCcw className="size-4" />
+
             Limpar filtros
           </Button>
 
           <Button
+            nativeButton={false}
             render={
               <a
                 href={`/historico/exportar?${exportParams.toString()}`}
               />
             }
           >
-            <Download />
+            <Download className="size-4" />
+
             Exportar CSV
           </Button>
         </div>
@@ -217,8 +225,12 @@ export function HistoryFiltersComponent({
             {options.members.map(
               (member) => (
                 <option
-                  key={member.user_id}
-                  value={member.user_id}
+                  key={
+                    member.user_id
+                  }
+                  value={
+                    member.user_id
+                  }
                 >
                   {member.name}
                 </option>
@@ -304,13 +316,23 @@ export function HistoryFiltersComponent({
             id="history-page-size"
             name="pageSize"
             defaultValue={
-              String(filters.pageSize)
+              String(
+                filters.pageSize
+              )
             }
             className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
           >
-            <option value="12">12</option>
-            <option value="24">24</option>
-            <option value="48">48</option>
+            <option value="12">
+              12
+            </option>
+
+            <option value="24">
+              24
+            </option>
+
+            <option value="48">
+              48
+            </option>
           </select>
         </div>
 
@@ -319,7 +341,8 @@ export function HistoryFiltersComponent({
             type="submit"
             className="w-full"
           >
-            <Filter />
+            <Filter className="size-4" />
+
             Aplicar filtros
           </Button>
         </div>

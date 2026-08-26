@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+
 import {
   createHistorySearchParams,
 } from "@/lib/history";
@@ -27,20 +28,26 @@ export function HistoryPagination({
   totalRows,
 }: HistoryPaginationProps) {
   const previous =
-    createHistorySearchParams(filters, {
-      page: Math.max(
-        currentPage - 1,
-        1
-      ),
-    });
+    createHistorySearchParams(
+      filters,
+      {
+        page: Math.max(
+          currentPage - 1,
+          1
+        ),
+      }
+    );
 
   const next =
-    createHistorySearchParams(filters, {
-      page: Math.min(
-        currentPage + 1,
-        totalPages
-      ),
-    });
+    createHistorySearchParams(
+      filters,
+      {
+        page: Math.min(
+          currentPage + 1,
+          totalPages
+        ),
+      }
+    );
 
   const start =
     totalRows === 0
@@ -49,10 +56,12 @@ export function HistoryPagination({
           filters.pageSize +
         1;
 
-  const end = Math.min(
-    currentPage * filters.pageSize,
-    totalRows
-  );
+  const end =
+    Math.min(
+      currentPage *
+        filters.pageSize,
+      totalRows
+    );
 
   return (
     <section className="flex flex-col justify-between gap-4 rounded-2xl border bg-card px-4 py-3 sm:flex-row sm:items-center">
@@ -68,9 +77,12 @@ export function HistoryPagination({
         </p>
 
         <Button
+          nativeButton={false}
           variant="outline"
           size="icon"
-          disabled={currentPage <= 1}
+          disabled={
+            currentPage <= 1
+          }
           render={
             currentPage > 1 ? (
               <Link
@@ -78,31 +90,38 @@ export function HistoryPagination({
                 aria-label="Página anterior"
               />
             ) : (
-              <span />
+              <span
+                aria-hidden="true"
+              />
             )
           }
         >
-          <ChevronLeft />
+          <ChevronLeft className="size-4" />
         </Button>
 
         <Button
+          nativeButton={false}
           variant="outline"
           size="icon"
           disabled={
-            currentPage >= totalPages
+            currentPage >=
+            totalPages
           }
           render={
-            currentPage < totalPages ? (
+            currentPage <
+            totalPages ? (
               <Link
                 href={`/historico?${next.toString()}`}
                 aria-label="Próxima página"
               />
             ) : (
-              <span />
+              <span
+                aria-hidden="true"
+              />
             )
           }
         >
-          <ChevronRight />
+          <ChevronRight className="size-4" />
         </Button>
       </div>
     </section>
