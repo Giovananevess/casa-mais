@@ -95,60 +95,59 @@ export async function createFinancialAccountAction(
   ].includes(values.accountType);
 
   const { error } =
-    await supabase
-      .from("accounts")
-      .insert({
-        household_id:
-          membership.household_id,
+  await supabase
+    .from("accounts")
+    .insert({
+      household_id:
+        membership.household_id,
 
-        name: values.name,
+      name: values.name,
 
-        account_type:
-          values.accountType,
+      account_type:
+        values.accountType,
 
-        institution:
-          values.institution || null,
+      institution:
+        values.institution || null,
 
-        owner_user_id:
-          values.ownerUserId || null,
+      owner_user_id:
+        values.ownerUserId || null,
 
-        initial_balance:
-          values.initialBalance,
+      initial_balance:
+        values.initialBalance,
 
-        current_balance:
-          values.initialBalance,
+      current_balance:
+        values.initialBalance,
 
-        closing_day:
-          values.accountType ===
-            "credit_card"
-            ? values.closingDay
-            : null,
+      closing_day:
+        values.accountType ===
+        "credit_card"
+          ? values.closingDay
+          : null,
 
-        due_day:
-          values.accountType ===
-            "credit_card"
-            ? values.dueDay
-            : null,
+      due_day:
+        values.accountType ===
+        "credit_card"
+          ? values.dueDay
+          : null,
 
-        auto_payment:
-          values.accountType ===
-            "credit_card"
-            ? values.autoPayment
-            : false,
+      auto_payment:
+        values.accountType ===
+        "credit_card"
+          ? values.autoPayment
+          : false,
 
-        auto_payment_account_id:
-          values.accountType ===
-            "credit_card" &&
-            values.autoPayment
-            ? values.autoPaymentAccountId ||
+      auto_payment_account_id:
+        values.accountType ===
+          "credit_card" &&
+        values.autoPayment
+          ? values.autoPaymentAccountId ||
             null
-            : null,
+          : null,
 
-        is_benefit: isBenefit,
+      is_benefit: isBenefit,
 
-        is_active: true,
-      });
-
+      is_active: true,
+    });
   if (error) {
     console.error(
       "Erro ao criar conta financeira:",

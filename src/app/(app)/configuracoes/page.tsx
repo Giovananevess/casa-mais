@@ -1,22 +1,48 @@
-import { CreditCardsSettings } from "@/components/settings/credit-cards-settings";
-import { FinancePreferencesCard } from "@/components/settings/finance-preferences";
-import { HouseholdMembersCard } from "@/components/settings/household-members-card";
-import { RecurringIncomeSettings } from "@/components/settings/recurring-income-settings";
+import {
+  CreditCardsSettings,
+} from "@/components/settings/credit-cards-settings";
 
-import { getFinancialAccounts } from "@/services/finance";
-import { getSettingsPageData } from "@/services/settings";
+import {
+  CreditCardHelp,
+} from "@/components/settings/credit-card-help";
+
+import {
+  FinancePreferencesCard,
+} from "@/components/settings/finance-preferences";
+
+import {
+  HouseholdMembersCard,
+} from "@/components/settings/household-members-card";
+
+import {
+  RecurringIncomeSettings,
+} from "@/components/settings/recurring-income-settings";
+
+import {
+  getFinancialAccounts,
+} from "@/services/finance";
+
+import {
+  getSettingsPageData,
+} from "@/services/settings";
+
+import {
+  getGoalMembers,
+} from "@/services/goals";
 
 export default async function SettingsPage() {
   const [
     settings,
     accounts,
+    members,
   ] = await Promise.all([
     getSettingsPageData(),
     getFinancialAccounts(),
+    getGoalMembers(),
   ]);
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pb-10">
       <section>
         <p className="text-sm font-medium text-primary">
           Casa+
@@ -50,7 +76,10 @@ export default async function SettingsPage() {
       <CreditCardsSettings
         cards={settings.cards}
         accounts={accounts}
+        members={members}
       />
+
+      <CreditCardHelp />
 
       <RecurringIncomeSettings
         income={

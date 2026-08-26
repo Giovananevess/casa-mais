@@ -28,24 +28,30 @@ async function getContext() {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userError || !user) {
     throw new Error(
       "Usuário não autenticado."
     );
   }
 
-  const { data: membership, error } =
-    await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+  const {
+    data: membership,
+    error: membershipError,
+  } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (error || !membership) {
+  if (
+    membershipError ||
+    !membership
+  ) {
     throw new Error(
-      error?.message ??
+      membershipError?.message ??
         "Casa não encontrada."
     );
   }
@@ -70,17 +76,31 @@ Promise<SettingsPageData> {
     recurringResult,
     preferencesResult,
   ] = await Promise.all([
+    /*
+     * =====================================================
+     * MEMBROS DA CASA
+     * =====================================================
+     */
     supabase
       .from("household_members")
       .select(`
         user_id,
+
         profile:profiles (
           id,
           name
         )
       `)
-      .eq("household_id", householdId),
+      .eq(
+        "household_id",
+        householdId
+      ),
 
+    /*
+     * =====================================================
+     * CARTÕES
+     * =====================================================
+     */
     supabase
       .from("accounts")
       .select(`
@@ -97,11 +117,25 @@ Promise<SettingsPageData> {
           name
         )
       `)
-      .eq("household_id", householdId)
-      .eq("account_type", "credit_card")
-      .eq("is_active", true)
+      .eq(
+        "household_id",
+        householdId
+      )
+      .eq(
+        "account_type",
+        "credit_card"
+      )
+      .eq(
+        "is_active",
+        true
+      )
       .order("name"),
 
+    /*
+     * =====================================================
+     * RECEITAS RECORRENTES
+     * =====================================================
+     */
     supabase
       .from("recurring_income")
       .select(`
@@ -119,65 +153,140 @@ Promise<SettingsPageData> {
           name
         ),
 
-        account:accounts (
+        account:accounts!recurring_income_account_id_fkey (
           name
         )
       `)
-      .eq("household_id", householdId)
+      .eq(
+        "household_id",
+        householdId
+      )
       .order("description"),
 
+    /*
+     * =====================================================
+     * PREFERÊNCIAS
+     * =====================================================
+     */
     supabase
-      .from("household_finance_settings")
+      .from(
+        "household_finance_settings"
+      )
       .select(`
         auto_process_finances,
         separate_benefits_from_cash
       `)
-      .eq("household_id", householdId)
+      .eq(
+        "household_id",
+        householdId
+      )
       .maybeSingle(),
   ]);
 
+  /*
+   * =====================================================
+   * TRATAMENTO DE ERROS
+   * =====================================================
+   */
+
   if (membersResult.error) {
     throw new Error(
-      membersResult.error.message
+      `Erro ao carregar membros: ${membersResult.error.message}`
     );
   }
 
   if (cardsResult.error) {
     throw new Error(
-      cardsResult.error.message
+      `Erro ao carregar cartões: ${cardsResult.error.message}`
     );
   }
 
+  const paymentAccountIds = [
+    ...new Set(
+      (cardsResult.data ?? [])
+        .map(
+          (card) =>
+            card.auto_payment_account_id
+        )
+        .filter(
+          (id): id is string =>
+            Boolean(id)
+        )
+    ),
+  ];
+
+  const paymentAccountsResult =
+    paymentAccountIds.length > 0
+      ? await supabase
+          .from("accounts")
+          .select("id, name")
+          .eq(
+            "household_id",
+            householdId
+          )
+          .in("id", paymentAccountIds)
+      : {
+          data: [],
+          error: null,
+        };
+
+  if (paymentAccountsResult.error) {
+    throw new Error(
+      `Erro ao carregar contas de pagamento: ${paymentAccountsResult.error.message}`
+    );
+  }
+
+  const paymentAccountMap = new Map(
+    (paymentAccountsResult.data ?? []).map(
+      (account) => [account.id, account.name]
+    )
+  );
+
   if (recurringResult.error) {
     throw new Error(
-      recurringResult.error.message
+      `Erro ao carregar receitas recorrentes: ${recurringResult.error.message}`
     );
   }
 
   if (preferencesResult.error) {
     throw new Error(
-      preferencesResult.error.message
+      `Erro ao carregar preferências: ${preferencesResult.error.message}`
     );
   }
 
- const members: SettingsMember[] =
-  (membersResult.data ?? []).map(
-    (item) => {
-      const profile =
-        firstRelation<{
-          id: string;
-          name: string;
-        }>(item.profile);
+  /*
+   * =====================================================
+   * MEMBROS
+   * =====================================================
+   */
 
-      return {
-        user_id: item.user_id,
-        name:
-          profile?.name ??
-          "Usuário",
-        email: null,
-      };
-    }
-  );
+  const members: SettingsMember[] =
+    (membersResult.data ?? []).map(
+      (item) => {
+        const profile =
+          firstRelation<{
+            id: string;
+            name: string;
+          }>(item.profile);
+
+        return {
+          user_id:
+            item.user_id,
+
+          name:
+            profile?.name ??
+            "Usuário",
+
+          email: null,
+        };
+      }
+    );
+
+  /*
+   * =====================================================
+   * CARTÕES
+   * =====================================================
+   */
 
   const cards: SettingsCreditCard[] =
   (cardsResult.data ?? []).map(
@@ -189,14 +298,18 @@ Promise<SettingsPageData> {
 
       return {
         id: item.id,
+
         name: item.name,
+
         institution:
           item.institution,
+
         owner_user_id:
           item.owner_user_id,
 
         closing_day:
           item.closing_day,
+
         due_day:
           item.due_day,
 
@@ -209,66 +322,87 @@ Promise<SettingsPageData> {
         owner_name:
           owner?.name ?? null,
 
-        payment_account_name: null,
+        payment_account_name:
+          item.auto_payment_account_id
+            ? paymentAccountMap.get(
+                item.auto_payment_account_id
+              ) ?? null
+            : null,
       };
     }
   );
+
+  /*
+   * =====================================================
+   * RECEITAS RECORRENTES
+   * =====================================================
+   */
+
   const recurringIncome:
     RecurringIncomeSetting[] =
-      (recurringResult.data ?? []).map(
-        (item) => {
-          const profile =
-            firstRelation<{
-              name: string;
-            }>(item.profile);
+      (
+        recurringResult.data ?? []
+      ).map((item) => {
+        const profile =
+          firstRelation<{
+            name: string;
+          }>(item.profile);
 
-          const account =
-            firstRelation<{
-              name: string;
-            }>(item.account);
+        const account =
+          firstRelation<{
+            name: string;
+          }>(item.account);
 
-          return {
-            id: item.id,
+        return {
+          id:
+            item.id,
 
-            user_id:
-              item.user_id,
+          user_id:
+            item.user_id,
 
-            user_name:
-              profile?.name ??
-              "Usuário",
+          user_name:
+            profile?.name ??
+            "Usuário",
 
-            account_id:
-              item.account_id,
+          account_id:
+            item.account_id,
 
-            account_name:
-              account?.name ??
-              null,
+          account_name:
+            account?.name ??
+            null,
 
-            income_type:
-              item.income_type,
+          income_type:
+            item.income_type,
 
-            description:
-              item.description,
+          description:
+            item.description,
 
-            amount:
-              Number(item.amount),
+          amount:
+            Number(item.amount),
 
-            day_of_month:
-              item.day_of_month,
+          day_of_month:
+            item.day_of_month,
 
-            is_benefit:
-              item.is_benefit,
+          is_benefit:
+            item.is_benefit,
 
-            is_active:
-              item.is_active,
-          };
-        }
-      );
+          is_active:
+            item.is_active,
+        };
+      });
+
+  /*
+   * =====================================================
+   * PREFERÊNCIAS
+   * =====================================================
+   */
 
   const preferences:
     FinancePreferences =
       preferencesResult.data ?? {
-        auto_process_finances: true,
+        auto_process_finances:
+          true,
+
         separate_benefits_from_cash:
           true,
       };

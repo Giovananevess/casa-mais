@@ -19,6 +19,8 @@ import {
   getDashboardTrend,
 } from "@/services/dashboard";
 
+import { after } from "next/server";
+
 import { FinancialTimeline } from "@/components/dashboard/financial-timeline";
 import { FinancialInsights } from "@/components/dashboard/financial-insights";
 
@@ -55,8 +57,16 @@ function calculateVariation(
 }
 
 export default async function DashboardPage() {
-  await runFinancialAutomations();
-  const supabase = await createClient();
+  after(async () => {
+    try {
+      await runFinancialAutomations();
+    } catch (error) {
+      console.error(
+        "Erro nas automações financeiras:",
+        error
+      );
+    }
+  }); const supabase = await createClient();
 
   const {
     data: { user },
@@ -74,7 +84,7 @@ export default async function DashboardPage() {
     "Usuário";
 
   const currentDashboard =
-  await getDashboardSummary();
+    await getDashboardSummary();
 
   const previousMonth = getPreviousMonth(
     currentDashboard.reference_month
@@ -84,7 +94,7 @@ export default async function DashboardPage() {
     previousDashboard,
     trend,
     expenseOptions,
-    timeline, 
+    timeline,
     insights,
   ] = await Promise.all([
     getDashboardSummary(previousMonth),
@@ -119,26 +129,26 @@ export default async function DashboardPage() {
   );
 
   return (
-  <div className="space-y-6 pb-8">
-    <section className="flex justify-end">
-      <NewExpenseDialog
-        options={expenseOptions}
-      />
-    </section>
+    <div className="space-y-6 pb-8">
+      <section className="flex justify-end">
+        <NewExpenseDialog
+          options={expenseOptions}
+        />
+      </section>
       <DashboardHero
-      name={name}
-      referenceMonth={
-        currentDashboard.reference_month
-      }
-      income={Number(summary.income)}
-      expenses={Number(summary.expenses)}
-      paid={Number(summary.paid)}
-      pending={Number(summary.pending)}
-      balance={Number(summary.balance)}
-      savings={Number(summary.savings)}
-      paidPercentage={Number(
-        summary.paid_percentage
-      )}
+        name={name}
+        referenceMonth={
+          currentDashboard.reference_month
+        }
+        income={Number(summary.income)}
+        expenses={Number(summary.expenses)}
+        paid={Number(summary.paid)}
+        pending={Number(summary.pending)}
+        balance={Number(summary.balance)}
+        savings={Number(summary.savings)}
+        paidPercentage={Number(
+          summary.paid_percentage
+        )}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -158,12 +168,12 @@ export default async function DashboardPage() {
             balanceVariation === null
               ? null
               : {
-                  value: balanceVariation,
-                  favorable:
-                    Number(summary.balance) >=
-                    Number(previousSummary.balance),
-                  label: "comparado ao mês anterior",
-                }
+                value: balanceVariation,
+                favorable:
+                  Number(summary.balance) >=
+                  Number(previousSummary.balance),
+                label: "comparado ao mês anterior",
+              }
           }
         />
 
@@ -179,12 +189,12 @@ export default async function DashboardPage() {
             paidVariation === null
               ? null
               : {
-                  value: paidVariation,
-                  favorable:
-                    Number(summary.paid) >=
-                    Number(previousSummary.paid),
-                  label: "comparado ao mês anterior",
-                }
+                value: paidVariation,
+                favorable:
+                  Number(summary.paid) >=
+                  Number(previousSummary.paid),
+                label: "comparado ao mês anterior",
+              }
           }
         />
 
@@ -204,12 +214,12 @@ export default async function DashboardPage() {
             pendingVariation === null
               ? null
               : {
-                  value: pendingVariation,
-                  favorable:
-                    Number(summary.pending) <=
-                    Number(previousSummary.pending),
-                  label: "comparado ao mês anterior",
-                }
+                value: pendingVariation,
+                favorable:
+                  Number(summary.pending) <=
+                  Number(previousSummary.pending),
+                label: "comparado ao mês anterior",
+              }
           }
         />
 
@@ -229,12 +239,12 @@ export default async function DashboardPage() {
             savingsVariation === null
               ? null
               : {
-                  value: savingsVariation,
-                  favorable:
-                    Number(summary.savings) >=
-                    Number(previousSummary.savings),
-                  label: "comparado ao mês anterior",
-                }
+                value: savingsVariation,
+                favorable:
+                  Number(summary.savings) >=
+                  Number(previousSummary.savings),
+                label: "comparado ao mês anterior",
+              }
           }
         />
       </section>
@@ -255,10 +265,10 @@ export default async function DashboardPage() {
         }
       />
       <section className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-  <FinancialTimeline groups={timeline} />
+        <FinancialTimeline groups={timeline} />
 
-  <FinancialInsights insights={insights} />
-</section>
+        <FinancialInsights insights={insights} />
+      </section>
     </div>
   );
 }
