@@ -3,6 +3,7 @@ import {
 } from "@/services/household-context";
 
 import type {
+  CreditCardInvoiceOption,
   FinancialAccount,
   IncomeItem,
 } from "@/types/finance";
@@ -67,15 +68,90 @@ Promise<FinancialAccount[]> {
     initial_balance:
       Number(
         account.initial_balance ??
-        0
+          0
       ),
 
     current_balance:
       Number(
         account.current_balance ??
-        0
+          0
       ),
   })) as FinancialAccount[];
+}
+
+/*
+ * =====================================================
+ * CARTÕES DE CRÉDITO
+ * =====================================================
+ */
+
+export async function getCreditCards():
+Promise<CreditCardInvoiceOption[]> {
+  const {
+    supabase,
+    householdId,
+  } = await getHouseholdContext();
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("accounts")
+    .select(`
+      id,
+      name,
+      owner_user_id,
+      closing_day,
+      due_day,
+      auto_payment,
+      auto_payment_account_id
+    `)
+    .eq(
+      "household_id",
+      householdId
+    )
+    .eq(
+      "account_type",
+      "credit_card"
+    )
+    .eq(
+      "is_active",
+      true
+    )
+    .order("name");
+
+  if (error) {
+    throw new Error(
+      `Erro ao carregar cartões: ${error.message}`
+    );
+  }
+
+  return (
+    data ?? []
+  ).map((card) => ({
+    id:
+      card.id,
+
+    name:
+      card.name,
+
+    owner_user_id:
+      card.owner_user_id,
+
+    closing_day:
+      card.closing_day,
+
+    due_day:
+      card.due_day,
+
+    auto_payment:
+      Boolean(
+        card.auto_payment
+      ),
+
+    auto_payment_account_id:
+      card.auto_payment_account_id,
+  })) as CreditCardInvoiceOption[];
 }
 
 /*
@@ -93,7 +169,10 @@ export async function getIncomeForMonth(
   } = await getHouseholdContext();
 
   /*
-   * Formato:
+   * Esperado:
+   * YYYY-MM
+   *
+   * Exemplo:
    * 2026-08
    */
   const reference =
@@ -102,17 +181,6 @@ export async function getIncomeForMonth(
       .toISOString()
       .slice(0, 7);
 
-  /*
-   * A tabela income já possui
-   * reference_month.
-   *
-   * Portanto é mais simples e
-   * eficiente consultar diretamente
-   * por ela do que fazer:
-   *
-   * received_date >= início
-   * received_date < próximo mês
-   */
   const referenceMonth =
     `${reference}-01`;
 

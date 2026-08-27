@@ -74,3 +74,32 @@ export type IncomeItem = {
     name: string;
   } | null;
 };
+
+export type CreditCardInvoiceOption = {
+  id: string;
+  name: string;
+
+  owner_user_id:
+    | string
+    | null;
+
+  closing_day:
+    | number
+    | null;
+
+  due_day:
+    | number
+    | null;
+
+  auto_payment: boolean;
+
+  auto_payment_account_id:
+    | string
+    | null;
+};
+
+export type CreateCreditCardInvoiceInput = {
+  creditCardId: string;
+  referenceMonth: string;
+  amount: number;
+};

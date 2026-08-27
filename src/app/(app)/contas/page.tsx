@@ -8,6 +8,13 @@ import { GenerateRecurringButton } from "@/components/expenses/generate-recurrin
 import { InstallmentsDialog } from "@/components/expenses/installments-dialog";
 import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
 import { RecurringExpenseDialog } from "@/components/expenses/recurring-expense-dialog";
+import {
+  CreditCardInvoiceDialog,
+} from "@/components/expenses/credit-card-invoice-dialog";
+
+import {
+  getCreditCards,
+} from "@/services/finance";
 
 import { formatCurrency } from "@/lib/currency";
 
@@ -20,24 +27,23 @@ export default async function ExpensesPage() {
   const [
     expenses,
     options,
+    creditCards,
   ] = await Promise.all([
     getExpenses(),
     getExpenseFormOptions(),
+    getCreditCards(),
   ]);
 
   /*
-   * O resumo continua usando TODAS
-   * as parcelas individualmente.
+   * O resumo continua usando todas
+   * as despesas individuais.
    *
-   * Isso é importante porque o
-   * agrupamento é somente visual.
+   * O agrupamento das compras parceladas
+   * é somente visual dentro de ExpensesList.
    */
   const total =
     expenses.reduce(
-      (
-        sum,
-        expense
-      ) =>
+      (sum, expense) =>
         sum +
         Number(
           expense.amount
@@ -55,10 +61,7 @@ export default async function ExpensesPage() {
             "overdue"
       )
       .reduce(
-        (
-          sum,
-          expense
-        ) =>
+        (sum, expense) =>
           sum +
           Number(
             expense.amount
@@ -68,6 +71,10 @@ export default async function ExpensesPage() {
 
   return (
     <div className="space-y-8 pb-8">
+      {/* ==================================================
+          CABEÇALHO
+         ================================================== */}
+
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-medium text-primary">
@@ -84,6 +91,10 @@ export default async function ExpensesPage() {
           </p>
         </div>
 
+        {/* ==================================================
+            AÇÕES
+           ================================================== */}
+
         <div className="flex flex-wrap justify-end gap-3">
           <GenerateRecurringButton />
 
@@ -95,11 +106,20 @@ export default async function ExpensesPage() {
             options={options}
           />
 
+          {/* NOVA FATURA DO CARTÃO */}
+          <CreditCardInvoiceDialog
+            cards={creditCards}
+          />
+
           <NewExpenseDialog
             options={options}
           />
         </div>
       </section>
+
+      {/* ==================================================
+          RESUMO
+         ================================================== */}
 
       <section className="grid gap-4 sm:grid-cols-2">
         <article className="rounded-3xl border bg-card p-5 shadow-sm">
@@ -142,6 +162,10 @@ export default async function ExpensesPage() {
           </div>
         </article>
       </section>
+
+      {/* ==================================================
+          LISTA DE CONTAS
+         ================================================== */}
 
       <ExpensesList
         expenses={expenses}
