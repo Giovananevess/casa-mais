@@ -1,17 +1,8 @@
-export type ExpenseStatus =
-  | "pending"
-  | "paid"
-  | "overdue"
-  | "cancelled";
+export type ExpenseStatus = "pending" | "paid" | "overdue" | "cancelled";
 
-export type ExpenseType =
-  | "fixed"
-  | "variable"
-  | "installment";
+export type ExpenseType = "fixed" | "variable" | "installment";
 
-export type ExpenseSplitType =
-  | "equal"
-  | "individual";
+export type ExpenseSplitType = "equal" | "individual";
 
 export type ExpenseCategory = {
   id: string;
@@ -72,7 +63,6 @@ export type ExpenseListItem = {
     name: string;
   } | null;
 };
-
 
 export type ExpenseAttachment = {
   id: string;

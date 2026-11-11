@@ -1,7 +1,4 @@
-import {
-  BadgeCheck,
-  UsersRound,
-} from "lucide-react";
+import { BadgeCheck, UsersRound } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { formatCurrency } from "@/lib/currency";
@@ -11,28 +8,22 @@ type PaymentsByPersonProps = {
   people: DashboardSummary["payments_by_person"];
 };
 
-export function PaymentsByPerson({
-  people,
-}: PaymentsByPersonProps) {
-  const hasPayments = people.some(
-    (person) => Number(person.amount) > 0
-  );
+export function PaymentsByPerson({ people }: PaymentsByPersonProps) {
+  const hasPayments = people.some((person) => Number(person.amount) > 0);
 
   const leader = hasPayments ? people[0] : null;
 
   return (
-    <article className="rounded-3xl border bg-card p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
+    <article className="bg-card rounded-3xl border p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
             Divisão do casal
           </p>
 
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">
-            Quem pagou mais
-          </h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">Quem pagou mais</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             Participação de cada pessoa nas contas pagas do mês.
           </p>
         </div>
@@ -56,19 +47,13 @@ export function PaymentsByPerson({
       ) : (
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {people.map((person, index) => {
-            const percentage = Math.min(
-              Math.max(Number(person.percentage), 0),
-              100
-            );
+            const percentage = Math.min(Math.max(Number(person.percentage), 0), 100);
 
             return (
-              <div
-                key={person.user_id}
-                className="rounded-2xl border bg-background/50 p-5"
-              >
+              <div key={person.user_id} className="bg-background/50 rounded-2xl border p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-11 items-center justify-center rounded-full border bg-muted text-sm font-semibold">
+                    <div className="bg-muted flex size-11 items-center justify-center rounded-full border text-sm font-semibold">
                       {person.name
                         .split(" ")
                         .filter(Boolean)
@@ -79,29 +64,23 @@ export function PaymentsByPerson({
                     </div>
 
                     <div>
-                      <p className="font-medium">
-                        {person.name}
-                      </p>
+                      <p className="font-medium">{person.name}</p>
 
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {formatCurrency(
-                          Number(person.amount)
-                        )}
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        {formatCurrency(Number(person.amount))}
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-lg font-semibold">
-                    {percentage.toFixed(0)}%
-                  </p>
+                  <p className="text-lg font-semibold">{percentage.toFixed(0)}%</p>
                 </div>
 
-                <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-muted">
+                <div className="bg-muted mt-5 h-2.5 overflow-hidden rounded-full">
                   <div
                     className={
                       index === 0
-                        ? "h-full rounded-full bg-primary transition-all duration-500"
-                        : "h-full rounded-full bg-muted-foreground/50 transition-all duration-500"
+                        ? "bg-primary h-full rounded-full transition-all duration-500"
+                        : "bg-muted-foreground/50 h-full rounded-full transition-all duration-500"
                     }
                     style={{
                       width: `${percentage}%`,

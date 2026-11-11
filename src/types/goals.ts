@@ -1,13 +1,6 @@
-export type GoalStatus =
-  | "active"
-  | "completed"
-  | "paused"
-  | "cancelled";
+export type GoalStatus = "active" | "completed" | "paused" | "cancelled";
 
-export type GoalPriority =
-  | "low"
-  | "medium"
-  | "high";
+export type GoalPriority = "low" | "medium" | "high";
 
 export type GoalMember = {
   user_id: string;
@@ -21,11 +14,7 @@ export type GoalContribution = {
   amount: number;
   contribution_date: string;
   notes: string | null;
-  source_type:
-    | "manual"
-    | "income"
-    | "transfer"
-    | "adjustment";
+  source_type: "manual" | "income" | "transfer" | "adjustment";
   created_at: string;
 
   profile: {
@@ -90,10 +79,7 @@ export type GoalChartItem = {
 };
 
 export type GoalInsight = {
-  type:
-    | "positive"
-    | "warning"
-    | "neutral";
+  type: "positive" | "warning" | "neutral";
   title: string;
   description: string;
 };

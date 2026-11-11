@@ -1,17 +1,10 @@
 import { CreateIncomeDialog } from "@/components/finance/create-income-dialog";
 import { formatCurrency } from "@/lib/currency";
-import {
-  getFinancialAccounts,
-  getIncomeForMonth,
-} from "@/services/finance";
+import { getFinancialAccounts, getIncomeForMonth } from "@/services/finance";
 import { getGoalMembers } from "@/services/goals";
 
 export default async function IncomePage() {
-  const [
-    income,
-    accounts,
-    members,
-  ] = await Promise.all([
+  const [income, accounts, members] = await Promise.all([
     getIncomeForMonth(),
     getFinancialAccounts(),
     getGoalMembers(),
@@ -19,104 +12,65 @@ export default async function IncomePage() {
 
   const cashIncome = income
     .filter((item) => !item.is_benefit)
-    .reduce(
-      (sum, item) =>
-        sum + Number(item.amount),
-      0
-    );
+    .reduce((sum, item) => sum + Number(item.amount), 0);
 
   const benefits = income
     .filter((item) => item.is_benefit)
-    .reduce(
-      (sum, item) =>
-        sum + Number(item.amount),
-      0
-    );
+    .reduce((sum, item) => sum + Number(item.amount), 0);
 
-  const total =
-    cashIncome + benefits;
+  const total = cashIncome + benefits;
 
   return (
     <div className="space-y-8 pb-8">
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-medium text-primary">
-            Entradas da casa
-          </p>
+          <p className="text-primary text-sm font-medium">Entradas da casa</p>
 
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Receitas
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Receitas</h1>
 
-          <p className="mt-2 text-muted-foreground">
-            Salários, benefícios e
-            outras entradas do mês.
+          <p className="text-muted-foreground mt-2">
+            Salários, benefícios e outras entradas do mês.
           </p>
         </div>
 
-        <CreateIncomeDialog
-          accounts={accounts}
-          members={members}
-        />
+        <CreateIncomeDialog accounts={accounts} members={members} />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <article className="rounded-3xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">
-            Receitas em dinheiro
-          </p>
+        <article className="bg-card rounded-3xl border p-5 shadow-sm">
+          <p className="text-muted-foreground text-sm">Receitas em dinheiro</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(
-              cashIncome
-            )}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(cashIncome)}</p>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">
-            Benefícios
-          </p>
+        <article className="bg-card rounded-3xl border p-5 shadow-sm">
+          <p className="text-muted-foreground text-sm">Benefícios</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(
-              benefits
-            )}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(benefits)}</p>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">
-            Total recebido
-          </p>
+        <article className="bg-card rounded-3xl border p-5 shadow-sm">
+          <p className="text-muted-foreground text-sm">Total recebido</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(total)}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(total)}</p>
         </article>
       </section>
 
       <section>
         <div className="mb-4">
-          <h2 className="text-xl font-semibold">
-            Entradas do mês
-          </h2>
+          <h2 className="text-xl font-semibold">Entradas do mês</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Tudo o que foi recebido
-            neste período.
+          <p className="text-muted-foreground mt-1 text-sm">
+            Tudo o que foi recebido neste período.
           </p>
         </div>
 
         {income.length === 0 ? (
           <div className="rounded-3xl border border-dashed p-10 text-center">
-            <p className="font-medium">
-              Nenhuma receita cadastrada
-            </p>
+            <p className="font-medium">Nenhuma receita cadastrada</p>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Cadastre o primeiro salário,
-              vale ou outra entrada do mês.
+            <p className="text-muted-foreground mt-1 text-sm">
+              Cadastre o primeiro salário, vale ou outra entrada do mês.
             </p>
           </div>
         ) : (
@@ -124,34 +78,21 @@ export default async function IncomePage() {
             {income.map((item) => (
               <article
                 key={item.id}
-                className="flex flex-col justify-between gap-4 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center"
+                className="bg-card flex flex-col justify-between gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center"
               >
                 <div>
-                  <p className="font-medium">
-                    {item.description}
-                  </p>
+                  <p className="font-medium">{item.description}</p>
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {item.profile?.name ??
-                      "Sem pessoa"}{" "}
-                    ·{" "}
-                    {item.account?.name ??
-                      "Sem conta"}
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {item.profile?.name ?? "Sem pessoa"} · {item.account?.name ?? "Sem conta"}
                   </p>
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <p className="font-semibold">
-                    +
-                    {formatCurrency(
-                      item.amount
-                    )}
-                  </p>
+                  <p className="font-semibold">+{formatCurrency(item.amount)}</p>
 
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.is_benefit
-                      ? "Benefício"
-                      : "Receita"}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {item.is_benefit ? "Benefício" : "Receita"}
                   </p>
                 </div>
               </article>

@@ -21,12 +21,7 @@ export function MobileSidebar() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            aria-label="Abrir menu"
-          >
+          <Button variant="outline" size="icon" className="lg:hidden" aria-label="Abrir menu">
             <Menu />
           </Button>
         }
@@ -35,9 +30,7 @@ export function MobileSidebar() {
       <SheetContent side="left" className="w-72 p-0">
         <SheetHeader className="sr-only">
           <SheetTitle>Menu principal</SheetTitle>
-          <SheetDescription>
-            Navegação entre as páginas do Casa+.
-          </SheetDescription>
+          <SheetDescription>Navegação entre as páginas do Casa+.</SheetDescription>
         </SheetHeader>
 
         <AppSidebar onNavigate={() => setOpen(false)} />

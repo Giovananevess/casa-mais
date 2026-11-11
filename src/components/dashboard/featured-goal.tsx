@@ -1,17 +1,10 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Target,
-} from "lucide-react";
+import { ArrowRight, Target } from "lucide-react";
 
 import { formatCurrency } from "@/lib/currency";
 import type { Goal } from "@/types/goals";
 
-export function FeaturedGoal({
-  goal,
-}: {
-  goal: Goal | null;
-}) {
+export function FeaturedGoal({ goal }: { goal: Goal | null }) {
   if (!goal) {
     return null;
   }
@@ -19,22 +12,20 @@ export function FeaturedGoal({
   return (
     <Link
       href={`/metas/${goal.id}`}
-      className="group block rounded-3xl border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+      className="group bg-card block rounded-3xl border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-2xl">
             <Target className="size-5" />
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
               Meta em destaque
             </p>
 
-            <h2 className="mt-1 text-xl font-semibold">
-              {goal.name}
-            </h2>
+            <h2 className="mt-1 text-xl font-semibold">{goal.name}</h2>
           </div>
         </div>
 
@@ -43,32 +34,22 @@ export function FeaturedGoal({
 
       <div className="mt-6">
         <div className="flex justify-between text-sm">
-          <span>
-            {formatCurrency(
-              goal.current_amount
-            )}
-          </span>
+          <span>{formatCurrency(goal.current_amount)}</span>
 
-          <span className="font-semibold">
-            {goal.percentage.toFixed(0)}%
-          </span>
+          <span className="font-semibold">{goal.percentage.toFixed(0)}%</span>
         </div>
 
-        <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
+        <div className="bg-muted mt-2 h-3 overflow-hidden rounded-full">
           <div
-            className="h-full rounded-full bg-primary"
+            className="bg-primary h-full rounded-full"
             style={{
               width: `${goal.percentage}%`,
             }}
           />
         </div>
 
-        <p className="mt-3 text-sm text-muted-foreground">
-          Faltam{" "}
-          {formatCurrency(
-            goal.remaining_amount
-          )}{" "}
-          para concluir.
+        <p className="text-muted-foreground mt-3 text-sm">
+          Faltam {formatCurrency(goal.remaining_amount)} para concluir.
         </p>
       </div>
     </Link>

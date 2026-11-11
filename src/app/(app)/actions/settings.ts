@@ -5,62 +5,38 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 function refreshSettings() {
-  revalidatePath(
-    "/configuracoes"
-  );
+  revalidatePath("/configuracoes");
 
-  revalidatePath(
-    "/contas-financeiras"
-  );
+  revalidatePath("/contas-financeiras");
 
-  revalidatePath(
-    "/receitas"
-  );
+  revalidatePath("/receitas");
 
-  revalidatePath(
-    "/dashboard"
-  );
+  revalidatePath("/dashboard");
 }
 
-export async function updateCreditCardAction(
-  input: {
-    cardId: string;
-    closingDay: number;
-    dueDay: number;
-    autoPayment: boolean;
-    autoPaymentAccountId:
-      | string
-      | null;
-  }
-) {
-  const supabase =
-    await createClient();
+export async function updateCreditCardAction(input: {
+  cardId: string;
+  closingDay: number;
+  dueDay: number;
+  autoPayment: boolean;
+  autoPaymentAccountId: string | null;
+}) {
+  const supabase = await createClient();
 
-  const { error } =
-    await supabase
-      .from("accounts")
-      .update({
-        closing_day:
-          input.closingDay,
+  const { error } = await supabase
+    .from("accounts")
+    .update({
+      closing_day: input.closingDay,
 
-        due_day:
-          input.dueDay,
+      due_day: input.dueDay,
 
-        auto_payment:
-          input.autoPayment,
+      auto_payment: input.autoPayment,
 
-        auto_payment_account_id:
-          input.autoPayment
-            ? input.autoPaymentAccountId
-            : null,
+      auto_payment_account_id: input.autoPayment ? input.autoPaymentAccountId : null,
 
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        input.cardId
-      );
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.cardId);
 
   if (error) {
     return {
@@ -73,63 +49,44 @@ export async function updateCreditCardAction(
 
   return {
     success: true as const,
-    message:
-      "Cartão atualizado.",
+    message: "Cartão atualizado.",
   };
 }
 
-export async function updateRecurringIncomeAction(
-  input: {
-    recurringIncomeId: string;
-    amount: number;
-    dayOfMonth: number;
-    isActive: boolean;
-  }
-) {
-  const supabase =
-    await createClient();
+export async function updateRecurringIncomeAction(input: {
+  recurringIncomeId: string;
+  amount: number;
+  dayOfMonth: number;
+  isActive: boolean;
+}) {
+  const supabase = await createClient();
 
-  if (
-    input.amount <= 0
-  ) {
+  if (input.amount <= 0) {
     return {
       success: false as const,
-      message:
-        "Informe um valor válido.",
+      message: "Informe um valor válido.",
     };
   }
 
-  if (
-    input.dayOfMonth < 1 ||
-    input.dayOfMonth > 31
-  ) {
+  if (input.dayOfMonth < 1 || input.dayOfMonth > 31) {
     return {
       success: false as const,
-      message:
-        "Informe um dia válido.",
+      message: "Informe um dia válido.",
     };
   }
 
-  const { error } =
-    await supabase
-      .from("recurring_income")
-      .update({
-        amount:
-          input.amount,
+  const { error } = await supabase
+    .from("recurring_income")
+    .update({
+      amount: input.amount,
 
-        day_of_month:
-          input.dayOfMonth,
+      day_of_month: input.dayOfMonth,
 
-        is_active:
-          input.isActive,
+      is_active: input.isActive,
 
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        input.recurringIncomeId
-      );
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.recurringIncomeId);
 
   if (error) {
     return {
@@ -142,20 +99,15 @@ export async function updateRecurringIncomeAction(
 
   return {
     success: true as const,
-    message:
-      "Receita recorrente atualizada.",
+    message: "Receita recorrente atualizada.",
   };
 }
 
-
-export async function updateFinancePreferencesAction(
-  input: {
-    autoProcessFinances: boolean;
-    separateBenefitsFromCash: boolean;
-  }
-) {
-  const supabase =
-    await createClient();
+export async function updateFinancePreferencesAction(input: {
+  autoProcessFinances: boolean;
+  separateBenefitsFromCash: boolean;
+}) {
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -164,51 +116,37 @@ export async function updateFinancePreferencesAction(
   if (!user) {
     return {
       success: false as const,
-      message:
-        "Usuário não autenticado.",
+      message: "Usuário não autenticado.",
     };
   }
 
-  const { data: membership } =
-    await supabase
-      .from("household_members")
-      .select("household_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+  const { data: membership } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (!membership) {
     return {
       success: false as const,
-      message:
-        "Casa não encontrada.",
+      message: "Casa não encontrada.",
     };
   }
 
-  const { error } =
-    await supabase
-      .from(
-        "household_finance_settings"
-      )
-      .upsert(
-        {
-          household_id:
-            membership.household_id,
+  const { error } = await supabase.from("household_finance_settings").upsert(
+    {
+      household_id: membership.household_id,
 
-          auto_process_finances:
-            input.autoProcessFinances,
+      auto_process_finances: input.autoProcessFinances,
 
-          separate_benefits_from_cash:
-            input
-              .separateBenefitsFromCash,
+      separate_benefits_from_cash: input.separateBenefitsFromCash,
 
-          updated_at:
-            new Date().toISOString(),
-        },
-        {
-          onConflict:
-            "household_id",
-        }
-      );
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "household_id",
+    },
+  );
 
   if (error) {
     return {
@@ -221,7 +159,6 @@ export async function updateFinancePreferencesAction(
 
   return {
     success: true as const,
-    message:
-      "Preferências atualizadas.",
+    message: "Preferências atualizadas.",
   };
 }

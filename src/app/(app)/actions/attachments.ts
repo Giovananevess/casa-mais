@@ -25,17 +25,15 @@ export async function registerAttachmentAction(input: {
     };
   }
 
-  const { error } = await supabase
-    .from("attachments")
-    .insert({
-      household_id: input.householdId,
-      expense_id: input.expenseId,
-      uploaded_by: user.id,
-      file_name: input.fileName,
-      file_path: input.filePath,
-      mime_type: input.mimeType,
-      file_size: input.fileSize,
-    });
+  const { error } = await supabase.from("attachments").insert({
+    household_id: input.householdId,
+    expense_id: input.expenseId,
+    uploaded_by: user.id,
+    file_name: input.fileName,
+    file_path: input.filePath,
+    mime_type: input.mimeType,
+    file_size: input.fileSize,
+  });
 
   if (error) {
     return {
@@ -53,17 +51,14 @@ export async function registerAttachmentAction(input: {
   };
 }
 
-export async function deleteAttachmentAction(
-  attachmentId: string
-) {
+export async function deleteAttachmentAction(attachmentId: string) {
   const supabase = await createClient();
 
-  const { data: attachment, error: findError } =
-    await supabase
-      .from("attachments")
-      .select("file_path")
-      .eq("id", attachmentId)
-      .single();
+  const { data: attachment, error: findError } = await supabase
+    .from("attachments")
+    .select("file_path")
+    .eq("id", attachmentId)
+    .single();
 
   if (findError || !attachment) {
     return {
@@ -72,10 +67,9 @@ export async function deleteAttachmentAction(
     };
   }
 
-  const { error: storageError } =
-    await supabase.storage
-      .from("receipts")
-      .remove([attachment.file_path]);
+  const { error: storageError } = await supabase.storage
+    .from("receipts")
+    .remove([attachment.file_path]);
 
   if (storageError) {
     return {
@@ -84,10 +78,7 @@ export async function deleteAttachmentAction(
     };
   }
 
-  const { error } = await supabase
-    .from("attachments")
-    .delete()
-    .eq("id", attachmentId);
+  const { error } = await supabase.from("attachments").delete().eq("id", attachmentId);
 
   if (error) {
     return {
@@ -104,14 +95,10 @@ export async function deleteAttachmentAction(
   };
 }
 
-export async function getAttachmentUrlAction(
-  filePath: string
-) {
+export async function getAttachmentUrlAction(filePath: string) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.storage
-    .from("receipts")
-    .createSignedUrl(filePath, 300);
+  const { data, error } = await supabase.storage.from("receipts").createSignedUrl(filePath, 300);
 
   if (error) {
     return {

@@ -5,29 +5,19 @@ const optionalUuid = z
   .trim()
   .refine(
     (value) => value === "" || z.string().uuid().safeParse(value).success,
-    "Identificador inválido."
+    "Identificador inválido.",
   );
 
 export const createExpenseSchema = z.object({
-purchaseDate: z
-  .string()
-  .min(
-    1,
-    "Informe a data da compra."
-  ),
-  
+  purchaseDate: z.string().min(1, "Informe a data da compra."),
+
   title: z
     .string()
     .trim()
     .min(2, "Informe o nome da conta.")
     .max(100, "Use no máximo 100 caracteres."),
 
-  description: z
-    .string()
-    .trim()
-    .max(300, "Use no máximo 300 caracteres.")
-    .optional()
-    .default(""),
+  description: z.string().trim().max(300, "Use no máximo 300 caracteres.").optional().default(""),
 
   amount: z.coerce
     .number()
@@ -37,10 +27,7 @@ purchaseDate: z
   dueDate: z
     .string()
     .min(1, "Informe a data de vencimento.")
-    .refine(
-      (value) => !Number.isNaN(Date.parse(`${value}T12:00:00`)),
-      "Data inválida."
-    ),
+    .refine((value) => !Number.isNaN(Date.parse(`${value}T12:00:00`)), "Data inválida."),
 
   categoryId: optionalUuid,
 
@@ -52,40 +39,27 @@ purchaseDate: z
 
   splitType: z.enum(["equal", "individual"]),
 
-  expenseType: z.enum([
-    "fixed",
-    "variable",
-    "installment",
+  expenseType: z.enum(["fixed", "variable", "installment"]),
+
+  paymentMethod: z.enum([
+    "cash",
+    "pix",
+    "debit_card",
+    "credit_card",
+    "meal_voucher",
+    "food_voucher",
+    "bank_transfer",
+    "other",
   ]),
 
-paymentMethod: z.enum([
-  "cash",
-  "pix",
-  "debit_card",
-  "credit_card",
-  "meal_voucher",
-  "food_voucher",
-  "bank_transfer",
-  "other",
-]),
-
-  notes: z
-    .string()
-    .trim()
-    .max(500, "Use no máximo 500 caracteres.")
-    .optional()
-    .default(""),
+  notes: z.string().trim().max(500, "Use no máximo 500 caracteres.").optional().default(""),
 });
 
-export type CreateExpenseInput =
-  z.infer<typeof createExpenseSchema>;
+export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 
-
-
-export const updateExpenseSchema =
-  createExpenseSchema.extend({
-    expenseId: z.string().uuid(),
-  });
+export const updateExpenseSchema = createExpenseSchema.extend({
+  expenseId: z.string().uuid(),
+});
 
 export const installmentExpenseSchema = z.object({
   title: z.string().trim().min(2).max(100),

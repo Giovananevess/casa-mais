@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Banknote,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { Banknote, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createIncomeAction } from "@/app/(app)/actions/finance";
@@ -21,38 +17,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type {
-  FinancialAccount,
-} from "@/types/finance";
+import type { FinancialAccount } from "@/types/finance";
 
-import type {
-  GoalMember,
-} from "@/types/goals";
+import type { GoalMember } from "@/types/goals";
 
 function getToday() {
   const now = new Date();
 
-  return new Date(
-    now.getTime() -
-      now.getTimezoneOffset() * 60_000
-  )
-    .toISOString()
-    .slice(0, 10);
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
-function parseCurrency(
-  value: string
-) {
-  const normalized = value
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+function parseCurrency(value: string) {
+  const normalized = value.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
 
   const parsed = Number(normalized);
 
-  return Number.isFinite(parsed)
-    ? parsed
-    : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export function CreateIncomeDialog({
@@ -64,73 +44,37 @@ export function CreateIncomeDialog({
 }) {
   const router = useRouter();
 
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [userId, setUserId] =
-    useState(
-      members[0]?.user_id ?? ""
-    );
+  const [userId, setUserId] = useState(members[0]?.user_id ?? "");
 
-  const [
-    incomeType,
-    setIncomeType,
-  ] = useState("salary");
+  const [incomeType, setIncomeType] = useState("salary");
 
-  const [
-    description,
-    setDescription,
-  ] = useState("Salário");
+  const [description, setDescription] = useState("Salário");
 
-  const [amount, setAmount] =
-    useState("");
+  const [amount, setAmount] = useState("");
 
-  const [accountId, setAccountId] =
-    useState("");
+  const [accountId, setAccountId] = useState("");
 
-  const [
-    receivedDate,
-    setReceivedDate,
-  ] = useState(getToday());
+  const [receivedDate, setReceivedDate] = useState(getToday());
 
-  const [recurring, setRecurring] =
-    useState(true);
+  const [recurring, setRecurring] = useState(true);
 
-  const availableAccounts =
-    accounts.filter((account) => {
-      if (
-        incomeType === "meal_voucher"
-      ) {
-        return (
-          account.account_type ===
-          "meal_voucher"
-        );
-      }
+  const availableAccounts = accounts.filter((account) => {
+    if (incomeType === "meal_voucher") {
+      return account.account_type === "meal_voucher";
+    }
 
-      if (
-        incomeType === "food_voucher"
-      ) {
-        return (
-          account.account_type ===
-          "food_voucher"
-        );
-      }
+    if (incomeType === "food_voucher") {
+      return account.account_type === "food_voucher";
+    }
 
-      return [
-        "checking",
-        "savings",
-        "cash",
-      ].includes(
-        account.account_type
-      );
-    });
+    return ["checking", "savings", "cash"].includes(account.account_type);
+  });
 
-  function handleTypeChange(
-    value: string
-  ) {
+  function handleTypeChange(value: string) {
     setIncomeType(value);
     setAccountId("");
 
@@ -138,35 +82,23 @@ export function CreateIncomeDialog({
       setDescription("Salário");
     }
 
-    if (
-      value === "meal_voucher"
-    ) {
-      setDescription(
-        "Vale-refeição"
-      );
+    if (value === "meal_voucher") {
+      setDescription("Vale-refeição");
     }
 
-    if (
-      value === "food_voucher"
-    ) {
-      setDescription(
-        "Vale-alimentação"
-      );
+    if (value === "food_voucher") {
+      setDescription("Vale-alimentação");
     }
 
     if (value === "bonus") {
       setDescription("Bônus");
     }
 
-    if (
-      value === "freelance"
-    ) {
+    if (value === "freelance") {
       setDescription("Freelance");
     }
 
-    if (
-      value === "commission"
-    ) {
+    if (value === "commission") {
       setDescription("Comissão");
     }
 
@@ -175,48 +107,37 @@ export function CreateIncomeDialog({
     }
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setLoading(true);
 
-    const result =
-      await createIncomeAction({
-        userId,
+    const result = await createIncomeAction({
+      userId,
 
-        accountId:
-          accountId || null,
+      accountId: accountId || null,
 
-        incomeType,
+      incomeType,
 
-        description,
+      description,
 
-        amount:
-          parseCurrency(amount),
+      amount: parseCurrency(amount),
 
-        receivedDate,
+      receivedDate,
 
-        recurring,
+      recurring,
 
-        dayOfMonth: Number(
-          receivedDate.slice(8, 10)
-        ),
-      });
+      dayOfMonth: Number(receivedDate.slice(8, 10)),
+    });
 
     setLoading(false);
 
     if (!result.success) {
-      toast.error(
-        result.message
-      );
+      toast.error(result.message);
       return;
     }
 
-    toast.success(
-      result.message
-    );
+    toast.success(result.message);
 
     setAmount("");
     setOpen(false);
@@ -226,130 +147,72 @@ export function CreateIncomeDialog({
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={() =>
-          setOpen(true)
-        }
-      >
+      <Button type="button" onClick={() => setOpen(true)}>
         <Plus />
         Nova receita
       </Button>
 
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-      >
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
               <Banknote className="size-5" />
             </div>
 
-            <DialogTitle className="mt-4 text-2xl">
-              Nova receita
-            </DialogTitle>
+            <DialogTitle className="mt-4 text-2xl">Nova receita</DialogTitle>
 
             <DialogDescription>
-              Registre salários,
-              benefícios e outras
-              entradas da casa.
+              Registre salários, benefícios e outras entradas da casa.
             </DialogDescription>
           </DialogHeader>
 
-          <form
-            onSubmit={
-              handleSubmit
-            }
-            className="mt-3 space-y-5"
-          >
+          <form onSubmit={handleSubmit} className="mt-3 space-y-5">
             <div className="space-y-2">
-              <Label>
-                Quem recebeu
-              </Label>
+              <Label>Quem recebeu</Label>
 
               <select
                 value={userId}
-                onChange={(event) =>
-                  setUserId(
-                    event.target.value
-                  )
-                }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                onChange={(event) => setUserId(event.target.value)}
+                className="bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                {members.map(
-                  (member) => (
-                    <option
-                      key={
-                        member.user_id
-                      }
-                      value={
-                        member.user_id
-                      }
-                    >
-                      {member.name}
-                    </option>
-                  )
-                )}
+                {members.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Tipo de receita
-              </Label>
+              <Label>Tipo de receita</Label>
 
               <select
                 value={incomeType}
-                onChange={(event) =>
-                  handleTypeChange(
-                    event.target.value
-                  )
-                }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                onChange={(event) => handleTypeChange(event.target.value)}
+                className="bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                <option value="salary">
-                  Salário
-                </option>
+                <option value="salary">Salário</option>
 
-                <option value="meal_voucher">
-                  Vale-refeição
-                </option>
+                <option value="meal_voucher">Vale-refeição</option>
 
-                <option value="food_voucher">
-                  Vale-alimentação
-                </option>
+                <option value="food_voucher">Vale-alimentação</option>
 
-                <option value="bonus">
-                  Bônus
-                </option>
+                <option value="bonus">Bônus</option>
 
-                <option value="freelance">
-                  Freelance
-                </option>
+                <option value="freelance">Freelance</option>
 
-                <option value="commission">
-                  Comissão
-                </option>
+                <option value="commission">Comissão</option>
 
-                <option value="other">
-                  Outros
-                </option>
+                <option value="other">Outros</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Descrição
-              </Label>
+              <Label>Descrição</Label>
 
               <Input
                 value={description}
-                onChange={(event) =>
-                  setDescription(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setDescription(event.target.value)}
                 placeholder="Ex.: Salário agosto"
               />
             </div>
@@ -359,11 +222,7 @@ export function CreateIncomeDialog({
 
               <Input
                 value={amount}
-                onChange={(event) =>
-                  setAmount(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setAmount(event.target.value)}
                 placeholder="4.500,00"
                 inputMode="decimal"
                 required
@@ -371,49 +230,30 @@ export function CreateIncomeDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Conta destino
-              </Label>
+              <Label>Conta destino</Label>
 
               <select
                 value={accountId}
-                onChange={(event) =>
-                  setAccountId(
-                    event.target.value
-                  )
-                }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                onChange={(event) => setAccountId(event.target.value)}
+                className="bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                <option value="">
-                  Sem conta
-                </option>
+                <option value="">Sem conta</option>
 
-                {availableAccounts.map(
-                  (account) => (
-                    <option
-                      key={account.id}
-                      value={account.id}
-                    >
-                      {account.name}
-                    </option>
-                  )
-                )}
+                {availableAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Data de recebimento
-              </Label>
+              <Label>Data de recebimento</Label>
 
               <Input
                 type="date"
                 value={receivedDate}
-                onChange={(event) =>
-                  setReceivedDate(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setReceivedDate(event.target.value)}
               />
             </div>
 
@@ -421,24 +261,15 @@ export function CreateIncomeDialog({
               <input
                 type="checkbox"
                 checked={recurring}
-                onChange={(event) =>
-                  setRecurring(
-                    event.target
-                      .checked
-                  )
-                }
+                onChange={(event) => setRecurring(event.target.checked)}
                 className="mt-1"
               />
 
               <div>
-                <p className="text-sm font-medium">
-                  Repetir todo mês
-                </p>
+                <p className="text-sm font-medium">Repetir todo mês</p>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Ideal para salário,
-                  vale-refeição e
-                  vale-alimentação.
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Ideal para salário, vale-refeição e vale-alimentação.
                 </p>
               </div>
             </label>
@@ -447,18 +278,13 @@ export function CreateIncomeDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() =>
-                  setOpen(false)
-                }
+                onClick={() => setOpen(false)}
                 disabled={loading}
               >
                 Cancelar
               </Button>
 
-              <Button
-                type="submit"
-                disabled={loading}
-              >
+              <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="animate-spin" />

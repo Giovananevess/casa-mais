@@ -25,9 +25,7 @@ function getDaysRemaining(targetDate: string | null): number | null {
   const target = new Date(`${targetDate}T00:00:00`);
   if (Number.isNaN(target.getTime())) return null;
 
-  return Math.ceil(
-    (target.getTime() - today.getTime()) / 86_400_000
-  );
+  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
 function enrichGoal(goal: Goal): Goal {
@@ -35,31 +33,14 @@ function enrichGoal(goal: Goal): Goal {
   const currentAmount = toNumber(goal.current_amount);
   const initialAmount = toNumber(goal.initial_amount);
 
-  const percentage =
-    targetAmount > 0
-      ? Math.min(
-          100,
-          (currentAmount / targetAmount) * 100
-        )
-      : 0;
+  const percentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
 
-  const remainingAmount = Math.max(
-    0,
-    targetAmount - currentAmount
-  );
+  const remainingAmount = Math.max(0, targetAmount - currentAmount);
 
-  const daysRemaining =
-    getDaysRemaining(goal.target_date);
+  const daysRemaining = getDaysRemaining(goal.target_date);
 
   const monthsRemaining =
-    daysRemaining === null
-      ? null
-      : Math.max(
-          1,
-          Math.ceil(
-            Math.max(daysRemaining, 0) / 30
-          )
-        );
+    daysRemaining === null ? null : Math.max(1, Math.ceil(Math.max(daysRemaining, 0) / 30));
 
   return {
     ...goal,
@@ -72,48 +53,31 @@ function enrichGoal(goal: Goal): Goal {
 
     remaining_amount: remainingAmount,
 
-    monthly_required:
-      monthsRemaining === null
-        ? null
-        : remainingAmount / monthsRemaining,
+    monthly_required: monthsRemaining === null ? null : remainingAmount / monthsRemaining,
 
     days_remaining: daysRemaining,
   };
 }
 
-function buildGoalInsights(
-  goal: Goal,
-  contributions: GoalContribution[]
-): GoalInsight[] {
+function buildGoalInsights(goal: Goal, contributions: GoalContribution[]): GoalInsight[] {
   const totalContributed = contributions.reduce(
     (sum, contribution) => sum + toNumber(contribution.amount),
-    0
+    0,
   );
 
   const contributionMonths = new Set(
     contributions
       .map((contribution) => contribution.contribution_date?.slice(0, 7))
-      .filter((month): month is string => Boolean(month))
+      .filter((month): month is string => Boolean(month)),
   ).size;
 
-  const averageMonthly =
-    contributionMonths > 0
-      ? totalContributed / contributionMonths
-      : 0;
+  const averageMonthly = contributionMonths > 0 ? totalContributed / contributionMonths : 0;
 
-  const remaining = Math.max(
-    0,
-    toNumber(goal.target_amount) - toNumber(goal.current_amount)
-  );
+  const remaining = Math.max(0, toNumber(goal.target_amount) - toNumber(goal.current_amount));
 
   const progress =
     toNumber(goal.target_amount) > 0
-      ? Math.min(
-          100,
-          (toNumber(goal.current_amount) /
-            toNumber(goal.target_amount)) *
-            100
-        )
+      ? Math.min(100, (toNumber(goal.current_amount) / toNumber(goal.target_amount)) * 100)
       : 0;
 
   const insights: GoalInsight[] = [];
@@ -145,8 +109,8 @@ function buildGoalInsights(
       averageMonthly > 0
         ? `Faltam aproximadamente ${Math.ceil(remaining / averageMonthly)} meses`
         : remaining === 0
-        ? "Meta já alcançada"
-        : "Sem estimativa (nenhuma contribuição mensal)",
+          ? "Meta já alcançada"
+          : "Sem estimativa (nenhuma contribuição mensal)",
   });
 
   return insights;
@@ -183,7 +147,8 @@ export async function getGoals(): Promise<Goal[]> {
 
   const { data, error } = await supabase
     .from("goals")
-    .select(`
+    .select(
+      `
       id,
       household_id,
       name,
@@ -200,7 +165,8 @@ export async function getGoals(): Promise<Goal[]> {
       completed_at,
       created_at,
       updated_at
-    `)
+    `,
+    )
     .eq("household_id", householdId)
     .neq("status", "cancelled")
     .order("priority", { ascending: false })
@@ -219,7 +185,7 @@ export async function getGoals(): Promise<Goal[]> {
       target_amount: toNumber(goal.target_amount),
       current_amount: toNumber(goal.current_amount),
       initial_amount: toNumber(goal.initial_amount),
-    } as Goal)
+    } as Goal),
   );
 }
 
@@ -253,24 +219,13 @@ export async function getGoalMembers(): Promise<GoalMember[]> {
   }));
 }
 
-function buildRanking(
-  contributions: GoalContribution[],
-  members: GoalMember[]
-): GoalRankingItem[] {
-  const total = contributions.reduce(
-    (sum, item) => sum + toNumber(item.amount),
-    0
-  );
+function buildRanking(contributions: GoalContribution[], members: GoalMember[]): GoalRankingItem[] {
+  const total = contributions.reduce((sum, item) => sum + toNumber(item.amount), 0);
 
   return members
     .map((member) => {
-      const memberContributions = contributions.filter(
-        (item) => item.user_id === member.user_id
-      );
-      const amount = memberContributions.reduce(
-        (sum, item) => sum + toNumber(item.amount),
-        0
-      );
+      const memberContributions = contributions.filter((item) => item.user_id === member.user_id);
+      const amount = memberContributions.reduce((sum, item) => sum + toNumber(item.amount), 0);
 
       return {
         userId: member.user_id,
@@ -283,17 +238,12 @@ function buildRanking(
     .sort((a, b) => b.amount - a.amount);
 }
 
-function buildChart(
-  contributions: GoalContribution[]
-): GoalChartItem[] {
+function buildChart(contributions: GoalContribution[]): GoalChartItem[] {
   const monthly = new Map<string, number>();
 
   for (const contribution of contributions) {
     const key = contribution.contribution_date.slice(0, 7);
-    monthly.set(
-      key,
-      (monthly.get(key) ?? 0) + toNumber(contribution.amount)
-    );
+    monthly.set(key, (monthly.get(key) ?? 0) + toNumber(contribution.amount));
   }
 
   let accumulated = 0;
@@ -317,20 +267,14 @@ function buildChart(
     });
 }
 
-export async function getGoalDetails(
-  goalId: string
-): Promise<GoalDetails> {
+export async function getGoalDetails(goalId: string): Promise<GoalDetails> {
   const { supabase, householdId } = await getGoalContext();
 
-  const [
-    goalResult,
-    contributionsResult,
-    historyResult,
-    members,
-  ] = await Promise.all([
+  const [goalResult, contributionsResult, historyResult, members] = await Promise.all([
     supabase
       .from("goals")
-      .select(`
+      .select(
+        `
         id,
         household_id,
         name,
@@ -347,13 +291,15 @@ export async function getGoalDetails(
         completed_at,
         created_at,
         updated_at
-      `)
+      `,
+      )
       .eq("id", goalId)
       .eq("household_id", householdId)
       .single(),
     supabase
       .from("goal_contributions")
-      .select(`
+      .select(
+        `
         id,
         goal_id,
         user_id,
@@ -366,13 +312,15 @@ export async function getGoalDetails(
           id,
           name
         )
-      `)
+      `,
+      )
       .eq("goal_id", goalId)
       .order("contribution_date", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase
       .from("goal_history")
-      .select(`
+      .select(
+        `
         id,
         goal_id,
         user_id,
@@ -385,7 +333,8 @@ export async function getGoalDetails(
           id,
           name
         )
-      `)
+      `,
+      )
       .eq("goal_id", goalId)
       .order("created_at", { ascending: false }),
     getGoalMembers(),
@@ -431,9 +380,7 @@ export async function getFeaturedGoal(): Promise<Goal | null> {
   const goals = await getGoals();
 
   return (
-    goals.find(
-      (goal) => goal.status === "active" && goal.priority === "high"
-    ) ??
+    goals.find((goal) => goal.status === "active" && goal.priority === "high") ??
     goals.find((goal) => goal.status === "active") ??
     null
   );

@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CalendarSync,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { CalendarSync, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createRecurringExpenseAction } from "@/app/(app)/actions/expenses";
@@ -22,10 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import type {
-  ExpenseFormOptions,
-  ExpenseSplitType,
-} from "@/types/expenses";
+import type { ExpenseFormOptions, ExpenseSplitType } from "@/types/expenses";
 
 type RecurringExpenseDialogProps = {
   options: ExpenseFormOptions;
@@ -34,76 +27,52 @@ type RecurringExpenseDialogProps = {
 function getToday() {
   const now = new Date();
 
-  return new Date(
-    now.getTime() - now.getTimezoneOffset() * 60_000
-  )
-    .toISOString()
-    .slice(0, 10);
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
 function parseCurrencyInput(value: string) {
-  const parsed = Number(
-    value
-      .replace(/\s/g, "")
-      .replace(/\./g, "")
-      .replace(",", ".")
-  );
+  const parsed = Number(value.replace(/\s/g, "").replace(/\./g, "").replace(",", "."));
 
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function RecurringExpenseDialog({
-  options,
-}: RecurringExpenseDialogProps) {
+export function RecurringExpenseDialog({ options }: RecurringExpenseDialogProps) {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] =
-    useState("");
-  const [defaultAmount, setDefaultAmount] =
-    useState("");
+  const [description, setDescription] = useState("");
+  const [defaultAmount, setDefaultAmount] = useState("");
   const [dueDay, setDueDay] = useState("10");
-  const [startDate, setStartDate] =
-    useState(getToday());
+  const [startDate, setStartDate] = useState(getToday());
   const [endDate, setEndDate] = useState("");
-  const [categoryId, setCategoryId] =
-    useState(options.categories[0]?.id ?? "");
-  const [accountId, setAccountId] =
-    useState(options.accounts[0]?.id ?? "");
-  const [paidBy, setPaidBy] = useState(
-    options.members[0]?.user_id ?? ""
-  );
-  const [splitType, setSplitType] =
-    useState<ExpenseSplitType>("equal");
-  const [paymentMethod, setPaymentMethod] =
-    useState("");
+  const [categoryId, setCategoryId] = useState(options.categories[0]?.id ?? "");
+  const [accountId, setAccountId] = useState(options.accounts[0]?.id ?? "");
+  const [paidBy, setPaidBy] = useState(options.members[0]?.user_id ?? "");
+  const [splitType, setSplitType] = useState<ExpenseSplitType>("equal");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [notes, setNotes] = useState("");
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
 
-    const result =
-      await createRecurringExpenseAction({
-        title,
-        description,
-        defaultAmount:
-          parseCurrencyInput(defaultAmount),
-        dueDay: Number(dueDay),
-        startDate,
-        endDate,
-        categoryId,
-        accountId,
-        paidBy,
-        splitType,
-        paymentMethod,
-        notes,
-      });
+    const result = await createRecurringExpenseAction({
+      title,
+      description,
+      defaultAmount: parseCurrencyInput(defaultAmount),
+      dueDay: Number(dueDay),
+      startDate,
+      endDate,
+      categoryId,
+      accountId,
+      paidBy,
+      splitType,
+      paymentMethod,
+      notes,
+    });
 
     setLoading(false);
 
@@ -119,11 +88,7 @@ export function RecurringExpenseDialog({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <CalendarSync />
         Conta recorrente
       </Button>
@@ -131,24 +96,18 @@ export function RecurringExpenseDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
               <CalendarSync className="size-5" />
             </div>
 
-            <DialogTitle className="mt-4 text-2xl">
-              Nova conta recorrente
-            </DialogTitle>
+            <DialogTitle className="mt-4 text-2xl">Nova conta recorrente</DialogTitle>
 
             <DialogDescription>
-              Use para internet, aluguel, academia,
-              assinatura ou outra despesa mensal.
+              Use para internet, aluguel, academia, assinatura ou outra despesa mensal.
             </DialogDescription>
           </DialogHeader>
 
-          <form
-            className="mt-3 space-y-6"
-            onSubmit={handleSubmit}
-          >
+          <form className="mt-3 space-y-6" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label>Nome da conta</Label>
@@ -156,9 +115,7 @@ export function RecurringExpenseDialog({
                 <Input
                   placeholder="Ex.: Internet"
                   value={title}
-                  onChange={(event) =>
-                    setTitle(event.target.value)
-                  }
+                  onChange={(event) => setTitle(event.target.value)}
                   required
                 />
               </div>
@@ -170,11 +127,7 @@ export function RecurringExpenseDialog({
                   inputMode="decimal"
                   placeholder="139,90"
                   value={defaultAmount}
-                  onChange={(event) =>
-                    setDefaultAmount(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => setDefaultAmount(event.target.value)}
                   required
                 />
               </div>
@@ -187,9 +140,7 @@ export function RecurringExpenseDialog({
                   min={1}
                   max={31}
                   value={dueDay}
-                  onChange={(event) =>
-                    setDueDay(event.target.value)
-                  }
+                  onChange={(event) => setDueDay(event.target.value)}
                   required
                 />
               </div>
@@ -200,9 +151,7 @@ export function RecurringExpenseDialog({
                 <Input
                   type="date"
                   value={startDate}
-                  onChange={(event) =>
-                    setStartDate(event.target.value)
-                  }
+                  onChange={(event) => setStartDate(event.target.value)}
                   required
                 />
               </div>
@@ -213,12 +162,10 @@ export function RecurringExpenseDialog({
                 <Input
                   type="date"
                   value={endDate}
-                  onChange={(event) =>
-                    setEndDate(event.target.value)
-                  }
+                  onChange={(event) => setEndDate(event.target.value)}
                 />
 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Deixe vazio para continuar sem prazo final.
                 </p>
               </div>
@@ -227,26 +174,17 @@ export function RecurringExpenseDialog({
                 <Label>Categoria</Label>
 
                 <select
-                  className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  className="bg-background flex h-10 w-full rounded-md border px-3 text-sm"
                   value={categoryId}
-                  onChange={(event) =>
-                    setCategoryId(event.target.value)
-                  }
+                  onChange={(event) => setCategoryId(event.target.value)}
                 >
-                  <option value="">
-                    Sem categoria
-                  </option>
+                  <option value="">Sem categoria</option>
 
-                  {options.categories.map(
-                    (category) => (
-                      <option
-                        key={category.id}
-                        value={category.id}
-                      >
-                        {category.name}
-                      </option>
-                    )
-                  )}
+                  {options.categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -254,21 +192,14 @@ export function RecurringExpenseDialog({
                 <Label>Conta financeira</Label>
 
                 <select
-                  className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  className="bg-background flex h-10 w-full rounded-md border px-3 text-sm"
                   value={accountId}
-                  onChange={(event) =>
-                    setAccountId(event.target.value)
-                  }
+                  onChange={(event) => setAccountId(event.target.value)}
                 >
-                  <option value="">
-                    Não informada
-                  </option>
+                  <option value="">Não informada</option>
 
                   {options.accounts.map((account) => (
-                    <option
-                      key={account.id}
-                      value={account.id}
-                    >
+                    <option key={account.id} value={account.id}>
                       {account.name}
                     </option>
                   ))}
@@ -279,17 +210,12 @@ export function RecurringExpenseDialog({
                 <Label>Responsável</Label>
 
                 <select
-                  className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  className="bg-background flex h-10 w-full rounded-md border px-3 text-sm"
                   value={paidBy}
-                  onChange={(event) =>
-                    setPaidBy(event.target.value)
-                  }
+                  onChange={(event) => setPaidBy(event.target.value)}
                 >
                   {options.members.map((member) => (
-                    <option
-                      key={member.user_id}
-                      value={member.user_id}
-                    >
+                    <option key={member.user_id} value={member.user_id}>
                       {member.name}
                     </option>
                   ))}
@@ -300,22 +226,13 @@ export function RecurringExpenseDialog({
                 <Label>Divisão</Label>
 
                 <select
-                  className="flex h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  className="bg-background flex h-10 w-full rounded-md border px-3 text-sm"
                   value={splitType}
-                  onChange={(event) =>
-                    setSplitType(
-                      event.target
-                        .value as ExpenseSplitType
-                    )
-                  }
+                  onChange={(event) => setSplitType(event.target.value as ExpenseSplitType)}
                 >
-                  <option value="equal">
-                    Dividir igualmente
-                  </option>
+                  <option value="equal">Dividir igualmente</option>
 
-                  <option value="individual">
-                    Responsabilidade individual
-                  </option>
+                  <option value="individual">Responsabilidade individual</option>
                 </select>
               </div>
 
@@ -325,11 +242,7 @@ export function RecurringExpenseDialog({
                 <Input
                   placeholder="Ex.: débito automático"
                   value={paymentMethod}
-                  onChange={(event) =>
-                    setPaymentMethod(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => setPaymentMethod(event.target.value)}
                 />
               </div>
 
@@ -338,37 +251,23 @@ export function RecurringExpenseDialog({
 
                 <Textarea
                   value={description}
-                  onChange={(event) =>
-                    setDescription(event.target.value)
-                  }
+                  onChange={(event) => setDescription(event.target.value)}
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2">
                 <Label>Observações</Label>
 
-                <Textarea
-                  value={notes}
-                  onChange={(event) =>
-                    setNotes(event.target.value)
-                  }
-                />
+                <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
               </div>
             </div>
 
             <div className="flex justify-end gap-3 border-t pt-5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
 
-              <Button
-                type="submit"
-                disabled={loading}
-              >
+              <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="animate-spin" />

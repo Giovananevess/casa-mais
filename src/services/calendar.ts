@@ -1,63 +1,31 @@
-import {
-  getMonthDateRange,
-  getLocalDateString,
-} from "@/lib/calendar";
+import { getMonthDateRange, getLocalDateString } from "@/lib/calendar";
 
-import {
-  getExpenseFormOptions,
-} from "@/services/expenses";
+import { getExpenseFormOptions } from "@/services/expenses";
 
-import {
-  getHouseholdContext,
-} from "@/services/household-context";
+import { getHouseholdContext } from "@/services/household-context";
 
-import type {
-  CalendarExpense,
-  CalendarMonthSummary,
-  CalendarPageData,
-} from "@/types/calendar";
+import type { CalendarExpense, CalendarMonthSummary, CalendarPageData } from "@/types/calendar";
 
-import type {
-  ExpenseListItem,
-  ExpenseStatus,
-} from "@/types/expenses";
+import type { ExpenseListItem, ExpenseStatus } from "@/types/expenses";
 
-function getDisplayStatus(
-  expense: ExpenseListItem
-): ExpenseStatus {
-  if (
-    expense.status === "pending" &&
-    expense.due_date <
-    getLocalDateString(new Date())
-  ) {
+function getDisplayStatus(expense: ExpenseListItem): ExpenseStatus {
+  if (expense.status === "pending" && expense.due_date < getLocalDateString(new Date())) {
     return "overdue";
   }
 
   return expense.status;
 }
 
-export async function getCalendarData(
-  referenceMonth: string
-): Promise<CalendarPageData> {
-  const {
-    supabase,
-    householdId,
-  } = await getHouseholdContext();
+export async function getCalendarData(referenceMonth: string): Promise<CalendarPageData> {
+  const { supabase, householdId } = await getHouseholdContext();
 
-  const {
-    startDate,
-    endDate,
-  } = getMonthDateRange(
-    referenceMonth
-  );
+  const { startDate, endDate } = getMonthDateRange(referenceMonth);
 
-  const [
-    expensesResult,
-    options,
-  ] = await Promise.all([
+  const [expensesResult, options] = await Promise.all([
     supabase
       .from("expenses")
-      .select(`
+      .select(
+        `
         id,
         household_id,
         title,
@@ -101,120 +69,72 @@ export async function getCalendarData(
           file_size,
           created_at
         )
-      `)
-      .eq(
-        "household_id",
-        householdId
+      `,
       )
-      .gte(
-        "due_date",
-        startDate
-      )
-      .lt(
-        "due_date",
-        endDate
-      )
-      .neq(
-        "status",
-        "cancelled"
-      )
-      .order(
-        "due_date",
-        {
-          ascending: true,
-        }
-      )
-      .order(
-        "created_at",
-        {
-          ascending: true,
-        }
-      ),
+      .eq("household_id", householdId)
+      .gte("due_date", startDate)
+      .lt("due_date", endDate)
+      .neq("status", "cancelled")
+      .order("due_date", {
+        ascending: true,
+      })
+      .order("created_at", {
+        ascending: true,
+      }),
 
     getExpenseFormOptions(),
   ]);
 
   if (expensesResult.error) {
-    throw new Error(
-      `Erro ao carregar calendário: ${expensesResult.error.message}`
-    );
+    throw new Error(`Erro ao carregar calendário: ${expensesResult.error.message}`);
   }
 
-  const expenses = (
-    expensesResult.data ?? []
-  ).map((expense) => {
+  const expenses = (expensesResult.data ?? []).map((expense) => {
     const normalized = {
       ...expense,
-      amount: Number(
-        expense.amount
-      ),
+      amount: Number(expense.amount),
     } as unknown as ExpenseListItem;
 
     return {
       ...normalized,
 
-      display_status:
-        getDisplayStatus(
-          normalized
-        ),
+      display_status: getDisplayStatus(normalized),
     };
   }) as CalendarExpense[];
 
-  const summary =
-    expenses.reduce<CalendarMonthSummary>(
-      (
-        current,
-        expense
-      ) => {
-        const amount =
-          Number(
-            expense.amount
-          );
+  const summary = expenses.reduce<CalendarMonthSummary>(
+    (current, expense) => {
+      const amount = Number(expense.amount);
 
-        current.total +=
-          amount;
+      current.total += amount;
 
-        current.expenseCount +=
-          1;
+      current.expenseCount += 1;
 
-        if (
-          expense.display_status ===
-          "paid"
-        ) {
-          current.paid +=
-            amount;
+      if (expense.display_status === "paid") {
+        current.paid += amount;
 
-          current.paidCount +=
-            1;
-        }
-
-        if (
-          expense.display_status ===
-          "pending"
-        ) {
-          current.pending +=
-            amount;
-        }
-
-        if (
-          expense.display_status ===
-          "overdue"
-        ) {
-          current.overdue +=
-            amount;
-        }
-
-        return current;
-      },
-      {
-        total: 0,
-        paid: 0,
-        pending: 0,
-        overdue: 0,
-        expenseCount: 0,
-        paidCount: 0,
+        current.paidCount += 1;
       }
-    );
+
+      if (expense.display_status === "pending") {
+        current.pending += amount;
+      }
+
+      if (expense.display_status === "overdue") {
+        current.overdue += amount;
+      }
+
+      return current;
+    },
+    {
+      total: 0,
+      paid: 0,
+      pending: 0,
+      overdue: 0,
+      expenseCount: 0,
+      paidCount: 0,
+    },
+  );
 
   return {
     expenses,

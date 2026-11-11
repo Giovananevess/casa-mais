@@ -10,35 +10,21 @@ type CalendarPageProps = {
   }>;
 };
 
-export default async function CalendarPage({
-  searchParams,
-}: CalendarPageProps) {
+export default async function CalendarPage({ searchParams }: CalendarPageProps) {
   const parameters = await searchParams;
 
-  const referenceMonth =
-    normalizeMonthValue(parameters.month);
+  const referenceMonth = normalizeMonthValue(parameters.month);
 
-  const calendar =
-    await getCalendarData(
-      referenceMonth
-    );
+  const calendar = await getCalendarData(referenceMonth);
 
   return (
     <div className="space-y-8 pb-8">
-      <MonthNavigation
-        referenceMonth={
-          referenceMonth
-        }
-      />
+      <MonthNavigation referenceMonth={referenceMonth} />
 
-      <CalendarSummary
-        summary={calendar.summary}
-      />
+      <CalendarSummary summary={calendar.summary} />
 
       <CalendarView
-        referenceMonth={
-          referenceMonth
-        }
+        referenceMonth={referenceMonth}
         expenses={calendar.expenses}
         options={calendar.options}
       />

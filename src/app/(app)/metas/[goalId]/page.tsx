@@ -15,9 +15,7 @@ type GoalPageProps = {
   }>;
 };
 
-export default async function GoalPage({
-  params,
-}: GoalPageProps) {
+export default async function GoalPage({ params }: GoalPageProps) {
   const { goalId } = await params;
 
   let details: GoalDetails;
@@ -32,49 +30,30 @@ export default async function GoalPage({
 
   return (
     <div className="space-y-6 pb-8">
-      <GoalDetailsHero
-        goal={goal}
-        members={details.members}
-      />
+      <GoalDetailsHero goal={goal} members={details.members} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Valor guardado
-          </p>
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Valor guardado</p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(goal.current_amount)}</p>
+        </article>
+
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Ainda falta</p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(goal.remaining_amount)}</p>
+        </article>
+
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Aporte mensal necessário</p>
           <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(goal.current_amount)}
+            {goal.monthly_required === null ? "Sem prazo" : formatCurrency(goal.monthly_required)}
           </p>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Ainda falta
-          </p>
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Dias restantes</p>
           <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(goal.remaining_amount)}
-          </p>
-        </article>
-
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Aporte mensal necessário
-          </p>
-          <p className="mt-3 text-2xl font-semibold">
-            {goal.monthly_required === null
-              ? "Sem prazo"
-              : formatCurrency(goal.monthly_required)}
-          </p>
-        </article>
-
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Dias restantes
-          </p>
-          <p className="mt-3 text-2xl font-semibold">
-            {goal.days_remaining === null
-              ? "—"
-              : Math.max(goal.days_remaining, 0)}
+            {goal.days_remaining === null ? "—" : Math.max(goal.days_remaining, 0)}
           </p>
         </article>
       </section>

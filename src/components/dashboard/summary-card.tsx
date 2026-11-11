@@ -1,18 +1,9 @@
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Minus,
-} from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type CardTone =
-  | "neutral"
-  | "success"
-  | "warning"
-  | "danger"
-  | "info";
+type CardTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 type SummaryCardTrend = {
   value: number;
@@ -71,43 +62,35 @@ export function SummaryCard({
   const styles = toneStyles[tone];
 
   const TrendIcon =
-    trend && trend.value > 0
-      ? ArrowUpRight
-      : trend && trend.value < 0
-        ? ArrowDownRight
-        : Minus;
+    trend && trend.value > 0 ? ArrowUpRight : trend && trend.value < 0 ? ArrowDownRight : Minus;
 
   return (
     <article
       className={cn(
-        "group relative isolate overflow-hidden rounded-3xl border bg-card p-5 shadow-sm",
+        "group bg-card relative isolate overflow-hidden rounded-3xl border p-5 shadow-sm",
         "transition duration-300 ease-out",
-        "hover:-translate-y-1 hover:border-foreground/10 hover:shadow-xl hover:shadow-black/5",
-        className
+        "hover:border-foreground/10 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5",
+        className,
       )}
     >
       <div
         className={cn(
-          "pointer-events-none absolute -right-16 -top-16 -z-10 size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-100",
-          styles.glow
+          "pointer-events-none absolute -top-16 -right-16 -z-10 size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-100",
+          styles.glow,
         )}
       />
 
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">
-            {title}
-          </p>
+          <p className="text-muted-foreground text-sm font-medium">{title}</p>
 
-          <p className="mt-3 truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-            {value}
-          </p>
+          <p className="mt-3 truncate text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
         </div>
 
         <div
           className={cn(
             "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105",
-            styles.icon
+            styles.icon,
           )}
         >
           <Icon className="size-5" />
@@ -122,30 +105,25 @@ export function SummaryCard({
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
                 trend.favorable
                   ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                  : "bg-red-500/10 text-red-700 dark:text-red-300"
+                  : "bg-red-500/10 text-red-700 dark:text-red-300",
               )}
             >
               <TrendIcon className="size-3.5" />
-
               {Math.abs(trend.value).toFixed(1)}%
             </span>
 
-            <span className="text-xs text-muted-foreground">
-              {trend.label}
-            </span>
+            <span className="text-muted-foreground text-xs">{trend.label}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
               <Minus className="size-3.5" />
               Sem histórico
             </span>
           </div>
         )}
 
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+        <p className="text-muted-foreground mt-3 text-xs leading-relaxed">{description}</p>
       </div>
     </article>
   );

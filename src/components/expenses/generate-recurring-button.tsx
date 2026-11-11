@@ -29,17 +29,8 @@ export function GenerateRecurringButton() {
   }
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      disabled={isLoading}
-      onClick={handleGenerate}
-    >
-      {isLoading ? (
-        <Loader2 className="animate-spin" />
-      ) : (
-        <CalendarSync />
-      )}
+    <Button type="button" variant="outline" disabled={isLoading} onClick={handleGenerate}>
+      {isLoading ? <Loader2 className="animate-spin" /> : <CalendarSync />}
 
       <span>Gerar recorrentes</span>
     </Button>

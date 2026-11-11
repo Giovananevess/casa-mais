@@ -1,34 +1,20 @@
-import {
-  CircleDollarSign,
-  ReceiptText,
-} from "lucide-react";
+import { CircleDollarSign, ReceiptText } from "lucide-react";
 
 import { ExpensesList } from "@/components/expenses/expenses-list";
 import { GenerateRecurringButton } from "@/components/expenses/generate-recurring-button";
 import { InstallmentsDialog } from "@/components/expenses/installments-dialog";
 import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
 import { RecurringExpenseDialog } from "@/components/expenses/recurring-expense-dialog";
-import {
-  CreditCardInvoiceDialog,
-} from "@/components/expenses/credit-card-invoice-dialog";
+import { CreditCardInvoiceDialog } from "@/components/expenses/credit-card-invoice-dialog";
 
-import {
-  getCreditCards,
-} from "@/services/finance";
+import { getCreditCards } from "@/services/finance";
 
 import { formatCurrency } from "@/lib/currency";
 
-import {
-  getExpenseFormOptions,
-  getExpenses,
-} from "@/services/expenses";
+import { getExpenseFormOptions, getExpenses } from "@/services/expenses";
 
 export default async function ExpensesPage() {
-  const [
-    expenses,
-    options,
-    creditCards,
-  ] = await Promise.all([
+  const [expenses, options, creditCards] = await Promise.all([
     getExpenses(),
     getExpenseFormOptions(),
     getCreditCards(),
@@ -41,33 +27,11 @@ export default async function ExpensesPage() {
    * O agrupamento das compras parceladas
    * é somente visual dentro de ExpensesList.
    */
-  const total =
-    expenses.reduce(
-      (sum, expense) =>
-        sum +
-        Number(
-          expense.amount
-        ),
-      0
-    );
+  const total = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
-  const pending =
-    expenses
-      .filter(
-        (expense) =>
-          expense.status ===
-            "pending" ||
-          expense.status ===
-            "overdue"
-      )
-      .reduce(
-        (sum, expense) =>
-          sum +
-          Number(
-            expense.amount
-          ),
-        0
-      );
+  const pending = expenses
+    .filter((expense) => expense.status === "pending" || expense.status === "overdue")
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
 
   return (
     <div className="space-y-8 pb-8">
@@ -77,17 +41,12 @@ export default async function ExpensesPage() {
 
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-medium text-primary">
-            Controle mensal
-          </p>
+          <p className="text-primary text-sm font-medium">Controle mensal</p>
 
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Contas da casa
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Contas da casa</h1>
 
-          <p className="mt-2 text-muted-foreground">
-            Cadastre e acompanhe todas
-            as despesas de vocês.
+          <p className="text-muted-foreground mt-2">
+            Cadastre e acompanhe todas as despesas de vocês.
           </p>
         </div>
 
@@ -98,22 +57,14 @@ export default async function ExpensesPage() {
         <div className="flex flex-wrap justify-end gap-3">
           <GenerateRecurringButton />
 
-          <RecurringExpenseDialog
-            options={options}
-          />
+          <RecurringExpenseDialog options={options} />
 
-          <InstallmentsDialog
-            options={options}
-          />
+          <InstallmentsDialog options={options} />
 
           {/* NOVA FATURA DO CARTÃO */}
-          <CreditCardInvoiceDialog
-            cards={creditCards}
-          />
+          <CreditCardInvoiceDialog cards={creditCards} />
 
-          <NewExpenseDialog
-            options={options}
-          />
+          <NewExpenseDialog options={options} />
         </div>
       </section>
 
@@ -122,38 +73,26 @@ export default async function ExpensesPage() {
          ================================================== */}
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <article className="rounded-3xl border bg-card p-5 shadow-sm">
+        <article className="bg-card rounded-3xl border p-5 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
-                Total cadastrado
-              </p>
+              <p className="text-muted-foreground text-sm">Total cadastrado</p>
 
-              <p className="mt-3 text-2xl font-semibold">
-                {formatCurrency(
-                  total
-                )}
-              </p>
+              <p className="mt-3 text-2xl font-semibold">{formatCurrency(total)}</p>
             </div>
 
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-2xl">
               <CircleDollarSign className="size-5" />
             </div>
           </div>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5 shadow-sm">
+        <article className="bg-card rounded-3xl border p-5 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
-                Pendente
-              </p>
+              <p className="text-muted-foreground text-sm">Pendente</p>
 
-              <p className="mt-3 text-2xl font-semibold">
-                {formatCurrency(
-                  pending
-                )}
-              </p>
+              <p className="mt-3 text-2xl font-semibold">{formatCurrency(pending)}</p>
             </div>
 
             <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700">
@@ -167,10 +106,7 @@ export default async function ExpensesPage() {
           LISTA DE CONTAS
          ================================================== */}
 
-      <ExpensesList
-        expenses={expenses}
-        options={options}
-      />
+      <ExpensesList expenses={expenses} options={options} />
     </div>
   );
 }

@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Ban,
-  CheckCircle2,
-  Loader2,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { Ban, CheckCircle2, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -28,34 +22,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type {
-  ExpenseFormOptions,
-  ExpenseListItem,
-} from "@/types/expenses";
+import type { ExpenseFormOptions, ExpenseListItem } from "@/types/expenses";
 
 type ExpenseActionsProps = {
   expense: ExpenseListItem;
   options: ExpenseFormOptions;
 };
 
-export function ExpenseActions({
-  expense,
-  options,
-}: ExpenseActionsProps) {
+export function ExpenseActions({ expense, options }: ExpenseActionsProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] =
-    useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function changeStatus(
-    status: "paid" | "pending"
-  ) {
+  async function changeStatus(status: "paid" | "pending") {
     setIsLoading(true);
 
     const result = await setExpenseStatusAction(
       expense.id,
       status,
-      expense.paid_by_profile?.id ??
-        options.members[0]?.user_id
+      expense.paid_by_profile?.id ?? options.members[0]?.user_id,
     );
 
     setIsLoading(false);
@@ -72,9 +56,7 @@ export function ExpenseActions({
   async function cancelExpense() {
     setIsLoading(true);
 
-    const result = await cancelExpenseAction(
-      expense.id
-    );
+    const result = await cancelExpenseAction(expense.id);
 
     setIsLoading(false);
 
@@ -90,9 +72,7 @@ export function ExpenseActions({
   async function deleteExpense() {
     setIsLoading(true);
 
-    const result = await deleteExpenseAction(
-      expense.id
-    );
+    const result = await deleteExpenseAction(expense.id);
 
     setIsLoading(false);
 
@@ -113,29 +93,14 @@ export function ExpenseActions({
           variant="outline"
           size="sm"
           disabled={isLoading}
-          onClick={() =>
-            changeStatus("pending")
-          }
+          onClick={() => changeStatus("pending")}
         >
-          {isLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <RotateCcw />
-          )}
+          {isLoading ? <Loader2 className="animate-spin" /> : <RotateCcw />}
           Voltar para pendente
         </Button>
       ) : (
-        <Button
-          type="button"
-          size="sm"
-          disabled={isLoading}
-          onClick={() => changeStatus("paid")}
-        >
-          {isLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <CheckCircle2 />
-          )}
+        <Button type="button" size="sm" disabled={isLoading} onClick={() => changeStatus("paid")}>
+          {isLoading ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
           Marcar como paga
         </Button>
       )}
@@ -143,11 +108,7 @@ export function ExpenseActions({
       <AlertDialog>
         <AlertDialogTrigger
           render={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-            >
+            <Button type="button" variant="outline" size="sm">
               <Ban />
               Cancelar
             </Button>
@@ -156,27 +117,17 @@ export function ExpenseActions({
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Cancelar esta conta?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Cancelar esta conta?</AlertDialogTitle>
 
             <AlertDialogDescription>
-              A conta não será apagada. Ela
-              continuará disponível para fins
-              de histórico.
+              A conta não será apagada. Ela continuará disponível para fins de histórico.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              Voltar
-            </AlertDialogCancel>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
 
-            <AlertDialogAction
-              onClick={cancelExpense}
-            >
-              Confirmar cancelamento
-            </AlertDialogAction>
+            <AlertDialogAction onClick={cancelExpense}>Confirmar cancelamento</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -184,11 +135,7 @@ export function ExpenseActions({
       <AlertDialog>
         <AlertDialogTrigger
           render={
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-            >
+            <Button type="button" variant="destructive" size="sm">
               <Trash2 />
               Excluir
             </Button>
@@ -197,28 +144,18 @@ export function ExpenseActions({
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Excluir definitivamente?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Excluir definitivamente?</AlertDialogTitle>
 
             <AlertDialogDescription>
-              Esta ação removerá a conta,
-              pagamentos, divisões e anexos
-              vinculados. Ela não poderá ser
-              desfeita.
+              Esta ação removerá a conta, pagamentos, divisões e anexos vinculados. Ela não poderá
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              Voltar
-            </AlertDialogCancel>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
 
-            <AlertDialogAction
-              onClick={deleteExpense}
-            >
-              Excluir conta
-            </AlertDialogAction>
+            <AlertDialogAction onClick={deleteExpense}>Excluir conta</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

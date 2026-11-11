@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useMemo,
-  useState,
-} from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CircleDollarSign,
@@ -16,10 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  createExpenseAction,
-  type CreateExpenseResult,
-} from "@/app/(app)/actions/expenses";
+import { createExpenseAction, type CreateExpenseResult } from "@/app/(app)/actions/expenses";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,11 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  ExpenseFormOptions,
-  ExpenseSplitType,
-  ExpenseType,
-} from "@/types/expenses";
+import type { ExpenseFormOptions, ExpenseSplitType, ExpenseType } from "@/types/expenses";
 
 type NewExpenseDialogProps = {
   options: ExpenseFormOptions;
@@ -57,45 +47,34 @@ type FormState = {
   notes: string;
   purchaseDate: string;
   paymentMethod:
-  | ""
-  | "cash"
-  | "pix"
-  | "debit_card"
-  | "credit_card"
-  | "meal_voucher"
-  | "food_voucher"
-  | "bank_transfer"
-  | "other";
+    | ""
+    | "cash"
+    | "pix"
+    | "debit_card"
+    | "credit_card"
+    | "meal_voucher"
+    | "food_voucher"
+    | "bank_transfer"
+    | "other";
 };
-
 
 function getToday() {
   const now = new Date();
 
-  const localDate = new Date(
-    now.getTime() -
-    now.getTimezoneOffset() * 60_000
-  );
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
 
-  return localDate
-    .toISOString()
-    .slice(0, 10);
+  return localDate.toISOString().slice(0, 10);
 }
 
-function createInitialState(
-  options: ExpenseFormOptions
-): FormState {
+function createInitialState(options: ExpenseFormOptions): FormState {
   return {
     title: "",
     description: "",
     amount: "",
     dueDate: getToday(),
-    categoryId:
-      options.categories[0]?.id ?? "",
-    accountId:
-      options.accounts[0]?.id ?? "",
-    paidBy:
-      options.members[0]?.user_id ?? "",
+    categoryId: options.categories[0]?.id ?? "",
+    accountId: options.accounts[0]?.id ?? "",
+    paidBy: options.members[0]?.user_id ?? "",
     status: "pending",
     splitType: "equal",
     expenseType: "variable",
@@ -106,16 +85,11 @@ function createInitialState(
 }
 
 function parseCurrencyInput(value: string) {
-  const normalized = value
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+  const normalized = value.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
 
   const parsed = Number(normalized);
 
-  return Number.isFinite(parsed)
-    ? parsed
-    : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export function NewExpenseDialog({
@@ -125,18 +99,12 @@ export function NewExpenseDialog({
 }: NewExpenseDialogProps) {
   const router = useRouter();
 
-  const initialState = useMemo(
-    () => createInitialState(options),
-    [options]
-  );
+  const initialState = useMemo(() => createInitialState(options), [options]);
 
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
-  const [form, setForm] =
-    useState<FormState>(initialState);
-  const [fieldErrors, setFieldErrors] =
-    useState<Record<string, string[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [form, setForm] = useState<FormState>(initialState);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   // Reset form when dialog closes
   const handleOpenChange = (nextOpen: boolean) => {
@@ -147,10 +115,7 @@ export function NewExpenseDialog({
     setOpen(nextOpen);
   };
 
-  function updateField<K extends keyof FormState>(
-    field: K,
-    value: FormState[K]
-  ) {
+  function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -172,9 +137,7 @@ export function NewExpenseDialog({
     return fieldErrors[field]?.[0];
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
     setFieldErrors({});
@@ -182,13 +145,11 @@ export function NewExpenseDialog({
     let result: CreateExpenseResult;
 
     try {
-        result = await createExpenseAction({
+      result = await createExpenseAction({
         title: form.title,
-          purchaseDate: form.purchaseDate,
+        purchaseDate: form.purchaseDate,
         description: form.description,
-        amount: parseCurrencyInput(
-          form.amount
-        ),
+        amount: parseCurrencyInput(form.amount),
         dueDate: form.dueDate,
         categoryId: form.categoryId,
         accountId: form.accountId,
@@ -196,25 +157,20 @@ export function NewExpenseDialog({
         status: form.status,
         splitType: form.splitType,
         expenseType: form.expenseType,
-        paymentMethod:
-          form.paymentMethod === "" ? "other" : form.paymentMethod,
+        paymentMethod: form.paymentMethod === "" ? "other" : form.paymentMethod,
         notes: form.notes,
       });
     } catch (error) {
       console.error(error);
 
-      toast.error(
-        "Não foi possível cadastrar a conta."
-      );
+      toast.error("Não foi possível cadastrar a conta.");
 
       setIsSubmitting(false);
       return;
     }
 
     if (!result.success) {
-      setFieldErrors(
-        result.fieldErrors ?? {}
-      );
+      setFieldErrors(result.fieldErrors ?? {});
 
       toast.error(result.message);
       setIsSubmitting(false);
@@ -232,11 +188,7 @@ export function NewExpenseDialog({
 
   return (
     <>
-      <Button
-        type="button"
-        className={className}
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" className={className} onClick={() => setOpen(true)}>
         <Plus />
         {buttonLabel}
       </Button>
@@ -251,75 +203,55 @@ export function NewExpenseDialog({
       >
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
               <ReceiptText className="size-5" />
             </div>
 
-            <DialogTitle className="mt-4 text-2xl">
-              Nova conta
-            </DialogTitle>
+            <DialogTitle className="mt-4 text-2xl">Nova conta</DialogTitle>
 
             <DialogDescription>
-              Cadastre uma despesa e defina
-              como ela será dividida entre vocês.
+              Cadastre uma despesa e defina como ela será dividida entre vocês.
             </DialogDescription>
           </DialogHeader>
 
-          <form
-            className="mt-2 space-y-7"
-            onSubmit={handleSubmit}
-          >
+          <form className="mt-2 space-y-7" onSubmit={handleSubmit}>
             <section className="space-y-4">
               <div>
-                <p className="text-sm font-semibold">
-                  Informações principais
-                </p>
+                <p className="text-sm font-semibold">Informações principais</p>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Informe o nome, o valor e o
-                  vencimento da conta.
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Informe o nome, o valor e o vencimento da conta.
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="expense-title">
-                    Nome da conta
-                  </Label>
+                  <Label htmlFor="expense-title">Nome da conta</Label>
 
                   <div className="relative">
-                    <FileText className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <FileText className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 
                     <Input
                       id="expense-title"
                       className="pl-10"
                       placeholder="Ex.: Energia, internet, mercado"
                       value={form.title}
-                      onChange={(event) =>
-                        updateField(
-                          "title",
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => updateField("title", event.target.value)}
                       disabled={isSubmitting}
                       autoFocus
                     />
                   </div>
 
                   {getError("title") && (
-                    <p className="text-xs text-destructive">
-                      {getError("title")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("title")}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-amount">
-                    Valor
-                  </Label>
+                  <Label htmlFor="expense-amount">Valor</Label>
 
                   <div className="relative">
-                    <CircleDollarSign className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <CircleDollarSign className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 
                     <Input
                       id="expense-amount"
@@ -327,351 +259,227 @@ export function NewExpenseDialog({
                       inputMode="decimal"
                       placeholder="0,00"
                       value={form.amount}
-                      onChange={(event) =>
-                        updateField(
-                          "amount",
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => updateField("amount", event.target.value)}
                       disabled={isSubmitting}
                     />
                   </div>
 
                   {getError("amount") && (
-                    <p className="text-xs text-destructive">
-                      {getError("amount")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("amount")}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-purchase-date">
-                    Data da compra
-                  </Label>
+                  <Label htmlFor="expense-purchase-date">Data da compra</Label>
 
                   <Input
                     id="expense-purchase-date"
                     type="date"
                     value={form.purchaseDate}
-                    onChange={(event) =>
-                      updateField(
-                        "purchaseDate",
-                        event.target.value
-                      )
-                    }
+                    onChange={(event) => updateField("purchaseDate", event.target.value)}
                     disabled={isSubmitting}
                   />
 
                   {getError("purchaseDate") && (
-                    <p className="text-xs text-destructive">
-                      {getError("purchaseDate")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("purchaseDate")}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-due-date">
-                    Vencimento
-                  </Label>
+                  <Label htmlFor="expense-due-date">Vencimento</Label>
 
                   {form.paymentMethod !== "credit_card" && (
                     <Input
                       id="expense-due-date"
                       type="date"
                       value={form.dueDate}
-                      onChange={(event) =>
-                        updateField(
-                          "dueDate",
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => updateField("dueDate", event.target.value)}
                       disabled={isSubmitting}
                     />
                   )}
 
                   {getError("dueDate") && (
-                    <p className="text-xs text-destructive">
-                      {getError("dueDate")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("dueDate")}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-payment-method">
-                    Forma de pagamento
-                  </Label>
+                  <Label htmlFor="expense-payment-method">Forma de pagamento</Label>
 
                   <select
                     id="expense-payment-method"
                     value={form.paymentMethod}
                     onChange={(event) =>
-                      updateField(
-                        "paymentMethod",
-                        event.target.value as FormState["paymentMethod"]
-                      )
+                      updateField("paymentMethod", event.target.value as FormState["paymentMethod"])
                     }
                     disabled={isSubmitting}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full rounded-md border px-3 py-2 text-sm transition outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="cash">
-                      Dinheiro
-                    </option>
+                    <option value="cash">Dinheiro</option>
 
-                    <option value="pix">
-                      Pix
-                    </option>
+                    <option value="pix">Pix</option>
 
-                    <option value="debit_card">
-                      Cartão de débito
-                    </option>
+                    <option value="debit_card">Cartão de débito</option>
 
-                    <option value="credit_card">
-                      Cartão de crédito
-                    </option>
+                    <option value="credit_card">Cartão de crédito</option>
 
-                    <option value="meal_voucher">
-                      Vale-refeição
-                    </option>
+                    <option value="meal_voucher">Vale-refeição</option>
 
-                    <option value="food_voucher">
-                      Vale-alimentação
-                    </option>
+                    <option value="food_voucher">Vale-alimentação</option>
 
-                    <option value="bank_transfer">
-                      Transferência
-                    </option>
+                    <option value="bank_transfer">Transferência</option>
 
-                    <option value="other">
-                      Outro
-                    </option>
+                    <option value="other">Outro</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-category">
-                    Categoria
-                  </Label>
+                  <Label htmlFor="expense-category">Categoria</Label>
 
                   <select
                     id="expense-category"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full rounded-md border px-3 py-2 text-sm transition outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={form.categoryId}
-                    onChange={(event) =>
-                      updateField(
-                        "categoryId",
-                        event.target.value
-                      )
-                    }
+                    onChange={(event) => updateField("categoryId", event.target.value)}
                     disabled={isSubmitting}
                   >
-                    <option value="">
-                      Sem categoria
-                    </option>
+                    <option value="">Sem categoria</option>
 
-                    {options.categories.map(
-                      (category) => (
-                        <option
-                          key={category.id}
-                          value={category.id}
-                        >
-                          {category.name}
-                        </option>
-                      )
-                    )}
+                    {options.categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-account">
-                    Conta financeira
-                  </Label>
+                  <Label htmlFor="expense-account">Conta financeira</Label>
 
                   <div className="relative">
-                    <WalletCards className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <WalletCards className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
 
                     <select
                       id="expense-account"
-                      className="flex h-10 w-full appearance-none rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full appearance-none rounded-md border py-2 pr-3 pl-10 text-sm transition outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={form.accountId}
-                      onChange={(event) =>
-                        updateField(
-                          "accountId",
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => updateField("accountId", event.target.value)}
                       disabled={isSubmitting}
                     >
-                      <option value="">
-                        Não informada
-                      </option>
+                      <option value="">Não informada</option>
 
-                      {options.accounts.map(
-                        (account) => (
-                          <option
-                            key={account.id}
-                            value={account.id}
-                          >
-                            {account.name}
-                          </option>
-                        )
-                      )}
+                      {options.accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
                 {form.paymentMethod === "credit_card" && (
                   <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 sm:col-span-2">
-                    <p className="text-sm font-medium">
-                      Compra no cartão de crédito
-                    </p>
+                    <p className="text-sm font-medium">Compra no cartão de crédito</p>
 
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      O vencimento será calculado automaticamente
-                      usando o dia de fechamento e o vencimento do
-                      cartão selecionado.
+                    <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                      O vencimento será calculado automaticamente usando o dia de fechamento e o
+                      vencimento do cartão selecionado.
                     </p>
                   </div>
                 )}
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="expense-description">
-                    Descrição
-                  </Label>
+                  <Label htmlFor="expense-description">Descrição</Label>
 
                   <Textarea
                     id="expense-description"
                     placeholder="Informações adicionais sobre a conta..."
                     value={form.description}
-                    onChange={(event) =>
-                      updateField(
-                        "description",
-                        event.target.value
-                      )
-                    }
+                    onChange={(event) => updateField("description", event.target.value)}
                     disabled={isSubmitting}
                   />
 
                   {getError("description") && (
-                    <p className="text-xs text-destructive">
-                      {getError("description")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("description")}</p>
                   )}
                 </div>
               </div>
             </section>
 
-            <div className="h-px bg-border" />
+            <div className="bg-border h-px" />
 
             <section className="space-y-4">
               <div>
-                <p className="text-sm font-semibold">
-                  Pagamento e divisão
-                </p>
+                <p className="text-sm font-semibold">Pagamento e divisão</p>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Defina quem pagou e como o
-                  valor será dividido.
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Defina quem pagou e como o valor será dividido.
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="expense-paid-by">
-                    Pago por
-                  </Label>
+                  <Label htmlFor="expense-paid-by">Pago por</Label>
 
                   <select
                     id="expense-paid-by"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full rounded-md border px-3 py-2 text-sm transition outline-none focus-visible:ring-2"
                     value={form.paidBy}
-                    onChange={(event) =>
-                      updateField(
-                        "paidBy",
-                        event.target.value
-                      )
-                    }
+                    onChange={(event) => updateField("paidBy", event.target.value)}
                     disabled={isSubmitting}
                   >
-                    {options.members.map(
-                      (member) => (
-                        <option
-                          key={member.user_id}
-                          value={member.user_id}
-                        >
-                          {member.name}
-                        </option>
-                      )
-                    )}
+                    {options.members.map((member) => (
+                      <option key={member.user_id} value={member.user_id}>
+                        {member.name}
+                      </option>
+                    ))}
                   </select>
 
                   {getError("paidBy") && (
-                    <p className="text-xs text-destructive">
-                      {getError("paidBy")}
-                    </p>
+                    <p className="text-destructive text-xs">{getError("paidBy")}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-status">
-                    Situação
-                  </Label>
+                  <Label htmlFor="expense-status">Situação</Label>
 
                   <select
                     id="expense-status"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full rounded-md border px-3 py-2 text-sm transition outline-none focus-visible:ring-2"
                     value={form.status}
                     onChange={(event) =>
-                      updateField(
-                        "status",
-                        event.target.value as
-                        | "pending"
-                        | "paid"
-                      )
+                      updateField("status", event.target.value as "pending" | "paid")
                     }
                     disabled={isSubmitting}
                   >
-                    <option value="pending">
-                      Pendente
-                    </option>
+                    <option value="pending">Pendente</option>
 
-                    <option value="paid">
-                      Paga
-                    </option>
+                    <option value="paid">Paga</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-split">
-                    Divisão
-                  </Label>
+                  <Label htmlFor="expense-split">Divisão</Label>
 
                   <div className="relative">
-                    <UsersRound className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <UsersRound className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
 
                     <select
                       id="expense-split"
-                      className="flex h-10 w-full appearance-none rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                      className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full appearance-none rounded-md border py-2 pr-3 pl-10 text-sm transition outline-none focus-visible:ring-2"
                       value={form.splitType}
                       onChange={(event) =>
-                        updateField(
-                          "splitType",
-                          event.target
-                            .value as ExpenseSplitType
-                        )
+                        updateField("splitType", event.target.value as ExpenseSplitType)
                       }
                       disabled={isSubmitting}
                     >
-                      <option value="equal">
-                        Dividir igualmente
-                      </option>
+                      <option value="equal">Dividir igualmente</option>
 
-                      <option value="individual">
-                        Responsabilidade individual
-                      </option>
+                      <option value="individual">Responsabilidade individual</option>
                     </select>
                   </div>
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {form.splitType === "equal"
                       ? "O valor será dividido igualmente entre os dois."
                       : "O valor ficará integralmente com quem realizou o pagamento."}
@@ -679,50 +487,31 @@ export function NewExpenseDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-type">
-                    Tipo de conta
-                  </Label>
+                  <Label htmlFor="expense-type">Tipo de conta</Label>
 
                   <select
                     id="expense-type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/30 flex h-10 w-full rounded-md border px-3 py-2 text-sm transition outline-none focus-visible:ring-2"
                     value={form.expenseType}
                     onChange={(event) =>
-                      updateField(
-                        "expenseType",
-                        event.target
-                          .value as ExpenseType
-                      )
+                      updateField("expenseType", event.target.value as ExpenseType)
                     }
                     disabled={isSubmitting}
                   >
-                    <option value="variable">
-                      Variável
-                    </option>
+                    <option value="variable">Variável</option>
 
-                    <option value="fixed">
-                      Fixa — lançamento único
-                    </option>
-
+                    <option value="fixed">Fixa — lançamento único</option>
                   </select>
                 </div>
 
-                
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="expense-notes">
-                    Observações
-                  </Label>
+                  <Label htmlFor="expense-notes">Observações</Label>
 
                   <Textarea
                     id="expense-notes"
                     placeholder="Observações opcionais..."
                     value={form.notes}
-                    onChange={(event) =>
-                      updateField(
-                        "notes",
-                        event.target.value
-                      )
-                    }
+                    onChange={(event) => updateField("notes", event.target.value)}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -739,13 +528,7 @@ export function NewExpenseDialog({
                 Cancelar
               </Button>
 
-              <Button
-                type="submit"
-                disabled={
-                  isSubmitting ||
-                  options.members.length === 0
-                }
-              >
+              <Button type="submit" disabled={isSubmitting || options.members.length === 0}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin" />

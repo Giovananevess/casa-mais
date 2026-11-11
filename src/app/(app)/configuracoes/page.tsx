@@ -1,41 +1,21 @@
-import {
-  CreditCardsSettings,
-} from "@/components/settings/credit-cards-settings";
+import { CreditCardsSettings } from "@/components/settings/credit-cards-settings";
 
-import {
-  CreditCardHelp,
-} from "@/components/settings/credit-card-help";
+import { CreditCardHelp } from "@/components/settings/credit-card-help";
 
-import {
-  FinancePreferencesCard,
-} from "@/components/settings/finance-preferences";
+import { FinancePreferencesCard } from "@/components/settings/finance-preferences";
 
-import {
-  HouseholdMembersCard,
-} from "@/components/settings/household-members-card";
+import { HouseholdMembersCard } from "@/components/settings/household-members-card";
 
-import {
-  RecurringIncomeSettings,
-} from "@/components/settings/recurring-income-settings";
+import { RecurringIncomeSettings } from "@/components/settings/recurring-income-settings";
 
-import {
-  getFinancialAccounts,
-} from "@/services/finance";
+import { getFinancialAccounts } from "@/services/finance";
 
-import {
-  getSettingsPageData,
-} from "@/services/settings";
+import { getSettingsPageData } from "@/services/settings";
 
-import {
-  getGoalMembers,
-} from "@/services/goals";
+import { getGoalMembers } from "@/services/goals";
 
 export default async function SettingsPage() {
-  const [
-    settings,
-    accounts,
-    members,
-  ] = await Promise.all([
+  const [settings, accounts, members] = await Promise.all([
     getSettingsPageData(),
     getFinancialAccounts(),
     getGoalMembers(),
@@ -44,48 +24,26 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-8 pb-10">
       <section>
-        <p className="text-sm font-medium text-primary">
-          Casa+
-        </p>
+        <p className="text-primary text-sm font-medium">Casa+</p>
 
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          Configurações
-        </h1>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Configurações</h1>
 
-        <p className="mt-2 text-muted-foreground">
-          Pessoas, cartões,
-          receitas recorrentes e
-          preferências financeiras.
+        <p className="text-muted-foreground mt-2">
+          Pessoas, cartões, receitas recorrentes e preferências financeiras.
         </p>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <HouseholdMembersCard
-          members={
-            settings.members
-          }
-        />
+        <HouseholdMembersCard members={settings.members} />
 
-        <FinancePreferencesCard
-          preferences={
-            settings.preferences
-          }
-        />
+        <FinancePreferencesCard preferences={settings.preferences} />
       </div>
 
-      <CreditCardsSettings
-        cards={settings.cards}
-        accounts={accounts}
-        members={members}
-      />
+      <CreditCardsSettings cards={settings.cards} accounts={accounts} members={members} />
 
       <CreditCardHelp />
 
-      <RecurringIncomeSettings
-        income={
-          settings.recurringIncome
-        }
-      />
+      <RecurringIncomeSettings income={settings.recurringIncome} />
     </div>
   );
 }

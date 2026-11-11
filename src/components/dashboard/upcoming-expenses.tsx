@@ -1,9 +1,4 @@
-import {
-  CalendarClock,
-  ChevronRight,
-  CircleAlert,
-  ReceiptText,
-} from "lucide-react";
+import { CalendarClock, ChevronRight, CircleAlert, ReceiptText } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { formatCurrency } from "@/lib/currency";
@@ -20,10 +15,7 @@ function getDueDateInformation(dateValue: string) {
 
   today.setHours(12, 0, 0, 0);
 
-  const difference = Math.round(
-    (dueDate.getTime() - today.getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
+  const difference = Math.round((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (difference === 0) {
     return {
@@ -52,21 +44,17 @@ function getDueDateInformation(dateValue: string) {
   };
 }
 
-export function UpcomingExpenses({
-  expenses,
-}: UpcomingExpensesProps) {
+export function UpcomingExpenses({ expenses }: UpcomingExpensesProps) {
   return (
-    <article className="rounded-3xl border bg-card p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
+    <article className="bg-card rounded-3xl border p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
           Atenção
         </p>
 
-        <h2 className="mt-2 text-xl font-semibold tracking-tight">
-          Próximas contas
-        </h2>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight">Próximas contas</h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-1 text-sm">
           Vencimentos que precisam ser acompanhados.
         </p>
       </div>
@@ -81,17 +69,14 @@ export function UpcomingExpenses({
       ) : (
         <div className="mt-6 space-y-3">
           {expenses.map((expense) => {
-            const dueDate = getDueDateInformation(
-              expense.due_date
-            );
+            const dueDate = getDueDateInformation(expense.due_date);
 
-            const isOverdue =
-              expense.status === "overdue";
+            const isOverdue = expense.status === "overdue";
 
             return (
               <div
                 key={expense.id}
-                className="group flex items-center justify-between gap-3 rounded-2xl border bg-background/40 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:bg-muted/30 hover:shadow-md"
+                className="group bg-background/40 hover:border-foreground/10 hover:bg-muted/30 flex items-center justify-between gap-3 rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div
@@ -99,7 +84,7 @@ export function UpcomingExpenses({
                       "flex size-11 shrink-0 items-center justify-center rounded-2xl",
                       isOverdue || dueDate.urgent
                         ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                        : "bg-primary/10 text-primary"
+                        : "bg-primary/10 text-primary",
                     )}
                   >
                     {isOverdue ? (
@@ -110,21 +95,16 @@ export function UpcomingExpenses({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {expense.title}
-                    </p>
+                    <p className="truncate font-medium">{expense.title}</p>
 
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                      <span>
-                        {expense.category ?? "Sem categoria"}
-                      </span>
+                    <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1 text-xs">
+                      <span>{expense.category ?? "Sem categoria"}</span>
 
                       <span>•</span>
 
                       <span
                         className={cn(
-                          dueDate.urgent &&
-                            "font-medium text-amber-700 dark:text-amber-300"
+                          dueDate.urgent && "font-medium text-amber-700 dark:text-amber-300",
                         )}
                       >
                         {dueDate.label}
@@ -134,13 +114,9 @@ export function UpcomingExpenses({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  <p className="font-semibold">
-                    {formatCurrency(
-                      Number(expense.amount)
-                    )}
-                  </p>
+                  <p className="font-semibold">{formatCurrency(Number(expense.amount))}</p>
 
-                  <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
             );

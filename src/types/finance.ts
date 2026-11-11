@@ -1,10 +1,5 @@
 export type AccountType =
-  | "checking"
-  | "savings"
-  | "cash"
-  | "credit_card"
-  | "meal_voucher"
-  | "food_voucher";
+  "checking" | "savings" | "cash" | "credit_card" | "meal_voucher" | "food_voucher";
 
 export type PaymentMethod =
   | "cash"
@@ -39,13 +34,7 @@ export type FinancialAccount = {
 };
 
 export type IncomeType =
-  | "salary"
-  | "meal_voucher"
-  | "food_voucher"
-  | "bonus"
-  | "freelance"
-  | "commission"
-  | "other";
+  "salary" | "meal_voucher" | "food_voucher" | "bonus" | "freelance" | "commission" | "other";
 
 export type IncomeItem = {
   id: string;
@@ -79,23 +68,15 @@ export type CreditCardInvoiceOption = {
   id: string;
   name: string;
 
-  owner_user_id:
-    | string
-    | null;
+  owner_user_id: string | null;
 
-  closing_day:
-    | number
-    | null;
+  closing_day: number | null;
 
-  due_day:
-    | number
-    | null;
+  due_day: number | null;
 
   auto_payment: boolean;
 
-  auto_payment_account_id:
-    | string
-    | null;
+  auto_payment_account_id: string | null;
 };
 
 export type CreateCreditCardInvoiceInput = {

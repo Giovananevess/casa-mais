@@ -1,52 +1,30 @@
 import Link from "next/link";
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import {
-  changeMonth,
-  getCurrentMonthString,
-  getMonthLabel,
-} from "@/lib/calendar";
+import { changeMonth, getCurrentMonthString, getMonthLabel } from "@/lib/calendar";
 
 type MonthNavigationProps = {
   referenceMonth: string;
 };
 
-export function MonthNavigation({
-  referenceMonth,
-}: MonthNavigationProps) {
-  const previousMonth = changeMonth(
-    referenceMonth,
-    -1
-  );
+export function MonthNavigation({ referenceMonth }: MonthNavigationProps) {
+  const previousMonth = changeMonth(referenceMonth, -1);
 
-  const nextMonth = changeMonth(
-    referenceMonth,
-    1
-  );
+  const nextMonth = changeMonth(referenceMonth, 1);
 
-  const currentMonth =
-    getCurrentMonthString();
+  const currentMonth = getCurrentMonthString();
 
   return (
     <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <p className="text-sm font-medium text-primary">
-          Agenda da casa
-        </p>
+        <p className="text-primary text-sm font-medium">Agenda da casa</p>
 
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          Calendário financeiro
-        </h1>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Calendário financeiro</h1>
 
-        <p className="mt-2 text-muted-foreground">
-          Visualize contas, parcelas e
-          vencimentos em um único lugar.
+        <p className="text-muted-foreground mt-2">
+          Visualize contas, parcelas e vencimentos em um único lugar.
         </p>
       </div>
 
@@ -55,18 +33,13 @@ export function MonthNavigation({
           nativeButton={false}
           variant="outline"
           size="icon"
-          render={
-            <Link
-              href={`/calendario?month=${previousMonth}`}
-              aria-label="Mês anterior"
-            />
-          }
+          render={<Link href={`/calendario?month=${previousMonth}`} aria-label="Mês anterior" />}
         >
           <ChevronLeft className="size-4" />
         </Button>
 
-        <div className="flex h-10 min-w-52 items-center justify-center gap-2 rounded-xl border bg-card px-4 text-sm font-medium shadow-sm">
-          <CalendarDays className="size-4 text-muted-foreground" />
+        <div className="bg-card flex h-10 min-w-52 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium shadow-sm">
+          <CalendarDays className="text-muted-foreground size-4" />
 
           {getMonthLabel(referenceMonth)}
         </div>
@@ -75,30 +48,20 @@ export function MonthNavigation({
           nativeButton={false}
           variant="outline"
           size="icon"
-          render={
-            <Link
-              href={`/calendario?month=${nextMonth}`}
-              aria-label="Próximo mês"
-            />
-          }
+          render={<Link href={`/calendario?month=${nextMonth}`} aria-label="Próximo mês" />}
         >
           <ChevronRight className="size-4" />
         </Button>
 
-        {referenceMonth !==
-          currentMonth && (
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={
-                <Link
-                  href={`/calendario?month=${currentMonth}`}
-                />
-              }
-            >
-              Hoje
-            </Button>
-          )}
+        {referenceMonth !== currentMonth && (
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href={`/calendario?month=${currentMonth}`} />}
+          >
+            Hoje
+          </Button>
+        )}
       </div>
     </section>
   );

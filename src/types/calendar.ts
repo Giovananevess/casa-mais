@@ -1,8 +1,4 @@
-import type {
-  ExpenseFormOptions,
-  ExpenseListItem,
-  ExpenseStatus,
-} from "@/types/expenses";
+import type { ExpenseFormOptions, ExpenseListItem, ExpenseStatus } from "@/types/expenses";
 
 export type CalendarExpense = ExpenseListItem & {
   display_status: ExpenseStatus;

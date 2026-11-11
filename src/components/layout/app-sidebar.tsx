@@ -24,15 +24,15 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-  name: "Caixinhas",
-  href: "/caixinhas",
-  icon: PiggyBank,
-},
+    name: "Caixinhas",
+    href: "/caixinhas",
+    icon: PiggyBank,
+  },
   {
-  name: "Receitas",
-  href: "/receitas",
-  icon: Banknote,
-},
+    name: "Receitas",
+    href: "/receitas",
+    icon: Banknote,
+  },
   {
     name: "Contas",
     href: "/contas",
@@ -64,37 +64,27 @@ type AppSidebarProps = {
   onNavigate?: () => void;
 };
 
-export function AppSidebar({
-  onNavigate,
-}: AppSidebarProps) {
+export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-20 items-center border-b border-sidebar-border px-5">
-        <Link
-          href="/dashboard"
-          className="group flex items-center gap-3"
-          onClick={onNavigate}
-        >
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm transition-transform duration-300 group-hover:scale-105">
+    <div className="bg-sidebar text-sidebar-foreground flex h-full flex-col">
+      <div className="border-sidebar-border flex h-20 items-center border-b px-5">
+        <Link href="/dashboard" className="group flex items-center gap-3" onClick={onNavigate}>
+          <div className="bg-sidebar-primary text-sidebar-primary-foreground flex size-11 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105">
             <HouseHeart className="size-5" />
           </div>
 
           <div>
-            <p className="text-xl font-semibold tracking-tight">
-              Casa+
-            </p>
+            <p className="text-xl font-semibold tracking-tight">Casa+</p>
 
-            <p className="text-xs text-sidebar-foreground/55">
-              Finanças da nossa casa
-            </p>
+            <p className="text-sidebar-foreground/55 text-xs">Finanças da nossa casa</p>
           </div>
         </Link>
       </div>
 
       <div className="px-4 pt-6">
-        <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/40">
+        <p className="text-sidebar-foreground/40 px-2 text-[10px] font-semibold tracking-[0.18em] uppercase">
           Menu principal
         </p>
       </div>
@@ -105,10 +95,7 @@ export function AppSidebar({
 
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" &&
-              pathname.startsWith(
-                `${item.href}/`
-              ));
+            (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
 
           return (
             <Link
@@ -120,18 +107,17 @@ export function AppSidebar({
                 "transition duration-200",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                  : "text-sidebar-foreground/65 hover:translate-x-0.5 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground hover:translate-x-0.5",
               )}
             >
               {isActive && (
-                <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-sidebar-primary" />
+                <span className="bg-sidebar-primary absolute inset-y-2 left-0 w-0.5 rounded-full" />
               )}
 
               <Icon
                 className={cn(
                   "size-5 transition-transform duration-200 group-hover:scale-105",
-                  isActive &&
-                    "text-sidebar-primary"
+                  isActive && "text-sidebar-primary",
                 )}
               />
 
@@ -142,19 +128,17 @@ export function AppSidebar({
       </nav>
 
       <div className="p-4">
-        <div className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar-accent/40 p-4">
-          <div className="absolute -right-8 -top-8 size-20 rounded-full bg-sidebar-primary/10 blur-2xl" />
+        <div className="border-sidebar-border bg-sidebar-accent/40 relative overflow-hidden rounded-2xl border p-4">
+          <div className="bg-sidebar-primary/10 absolute -top-8 -right-8 size-20 rounded-full blur-2xl" />
 
           <div className="relative">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-sidebar-primary/10 text-sidebar-primary">
+            <div className="bg-sidebar-primary/10 text-sidebar-primary flex size-9 items-center justify-center rounded-xl">
               <Sparkles className="size-4" />
             </div>
 
-            <p className="mt-3 text-sm font-medium">
-              Casa organizada
-            </p>
+            <p className="mt-3 text-sm font-medium">Casa organizada</p>
 
-            <p className="mt-1 text-xs leading-relaxed text-sidebar-foreground/50">
+            <p className="text-sidebar-foreground/50 mt-1 text-xs leading-relaxed">
               Acompanhe contas, metas e a divisão financeira do casal.
             </p>
           </div>

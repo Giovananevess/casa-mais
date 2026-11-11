@@ -5,21 +5,11 @@ import type {
   ExpenseType,
 } from "@/types/expenses";
 
-export type HistoryStatusFilter =
-  | "all"
-  | ExpenseStatus;
+export type HistoryStatusFilter = "all" | ExpenseStatus;
 
-export type HistoryTypeFilter =
-  | "all"
-  | ExpenseType
-  | "recurring";
+export type HistoryTypeFilter = "all" | ExpenseType | "recurring";
 
-export type HistorySort =
-  | "newest"
-  | "oldest"
-  | "highest"
-  | "lowest"
-  | "title";
+export type HistorySort = "newest" | "oldest" | "highest" | "lowest" | "title";
 
 export type HistoryFilters = {
   startDate: string;

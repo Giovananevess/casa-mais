@@ -6,44 +6,24 @@ import { getGoals } from "@/services/goals";
 export default async function GoalsPage() {
   const goals = await getGoals();
 
-  const active = goals.filter(
-    (goal) =>
-      goal.status === "active" ||
-      goal.status === "paused"
-  );
+  const active = goals.filter((goal) => goal.status === "active" || goal.status === "paused");
 
-  const completed = goals.filter(
-    (goal) =>
-      goal.status === "completed"
-  );
+  const completed = goals.filter((goal) => goal.status === "completed");
 
-  const targetTotal = active.reduce(
-    (sum, goal) =>
-      sum + goal.target_amount,
-    0
-  );
+  const targetTotal = active.reduce((sum, goal) => sum + goal.target_amount, 0);
 
-  const currentTotal = active.reduce(
-    (sum, goal) =>
-      sum + goal.current_amount,
-    0
-  );
+  const currentTotal = active.reduce((sum, goal) => sum + goal.current_amount, 0);
 
   return (
     <div className="space-y-8 pb-8">
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-medium text-primary">
-            Planejamento do casal
-          </p>
+          <p className="text-primary text-sm font-medium">Planejamento do casal</p>
 
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Metas financeiras
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Metas financeiras</h1>
 
-          <p className="mt-2 text-muted-foreground">
-            Transformem planos e sonhos em
-            objetivos acompanháveis.
+          <p className="text-muted-foreground mt-2">
+            Transformem planos e sonhos em objetivos acompanháveis.
           </p>
         </div>
 
@@ -51,43 +31,29 @@ export default async function GoalsPage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Guardado nas metas
-          </p>
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Guardado nas metas</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(currentTotal)}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(currentTotal)}</p>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Total planejado
-          </p>
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Total planejado</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {formatCurrency(targetTotal)}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{formatCurrency(targetTotal)}</p>
         </article>
 
-        <article className="rounded-3xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Metas concluídas
-          </p>
+        <article className="bg-card rounded-3xl border p-5">
+          <p className="text-muted-foreground text-sm">Metas concluídas</p>
 
-          <p className="mt-3 text-2xl font-semibold">
-            {completed.length}
-          </p>
+          <p className="mt-3 text-2xl font-semibold">{completed.length}</p>
         </article>
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold">
-          Em andamento
-        </h2>
+        <h2 className="text-xl font-semibold">Em andamento</h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-1 text-sm">
           Objetivos que ainda estão sendo construídos.
         </p>
 
@@ -98,18 +64,12 @@ export default async function GoalsPage() {
 
       {completed.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold">
-            Conquistas
-          </h2>
+          <h2 className="text-xl font-semibold">Conquistas</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Metas que vocês já concluíram.
-          </p>
+          <p className="text-muted-foreground mt-1 text-sm">Metas que vocês já concluíram.</p>
 
           <div className="mt-5">
-            <GoalsList
-              goals={completed}
-            />
+            <GoalsList goals={completed} />
           </div>
         </section>
       )}

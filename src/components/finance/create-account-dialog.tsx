@@ -2,34 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CreditCard,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { CreditCard, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createFinancialAccountAction } from "@/app/(app)/actions/finance";
 
 import { Button } from "@/components/ui/button";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type {
-  FinancialAccount,
-} from "@/types/finance";
+import type { FinancialAccount } from "@/types/finance";
 
-import type {
-  GoalMember,
-} from "@/types/goals";
+import type { GoalMember } from "@/types/goals";
 
 type CreateAccountDialogProps = {
   members: GoalMember[];
@@ -39,19 +26,12 @@ type CreateAccountDialogProps = {
   triggerLabel?: string;
 };
 
-function parseCurrency(
-  value: string
-) {
-  const normalized = value
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+function parseCurrency(value: string) {
+  const normalized = value.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
 
   const parsed = Number(normalized);
 
-  return Number.isFinite(parsed)
-    ? parsed
-    : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export function CreateAccountDialog({
@@ -62,97 +42,51 @@ export function CreateAccountDialog({
 }: CreateAccountDialogProps) {
   const router = useRouter();
 
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
 
-  const [
-    accountType,
-    setAccountType,
-  ] = useState(
-    defaultAccountType
+  const [accountType, setAccountType] = useState(defaultAccountType);
+
+  const [institution, setInstitution] = useState("");
+
+  const [initialBalance, setInitialBalance] = useState("0");
+
+  const [ownerUserId, setOwnerUserId] = useState(members[0]?.user_id ?? "");
+
+  const [closingDay, setClosingDay] = useState("5");
+
+  const [dueDay, setDueDay] = useState("12");
+
+  const [autoPayment, setAutoPayment] = useState(false);
+
+  const [autoPaymentAccountId, setAutoPaymentAccountId] = useState("");
+
+  const paymentAccounts = existingAccounts.filter(
+    (account) => account.account_type === "checking" || account.account_type === "savings",
   );
 
-  const [
-    institution,
-    setInstitution,
-  ] = useState("");
-
-  const [
-    initialBalance,
-    setInitialBalance,
-  ] = useState("0");
-
-  const [
-    ownerUserId,
-    setOwnerUserId,
-  ] = useState(
-    members[0]?.user_id ?? ""
-  );
-
-  const [
-    closingDay,
-    setClosingDay,
-  ] = useState("5");
-
-  const [
-    dueDay,
-    setDueDay,
-  ] = useState("12");
-
-  const [
-    autoPayment,
-    setAutoPayment,
-  ] = useState(false);
-
-  const [
-    autoPaymentAccountId,
-    setAutoPaymentAccountId,
-  ] = useState("");
-
-  const paymentAccounts =
-    existingAccounts.filter(
-      (account) =>
-        account.account_type ===
-          "checking" ||
-        account.account_type ===
-          "savings"
-    );
-
-  const isCreditCard =
-    accountType ===
-    "credit_card";
+  const isCreditCard = accountType === "credit_card";
 
   function resetForm() {
     setName("");
-    setAccountType(
-      defaultAccountType
-    );
+    setAccountType(defaultAccountType);
     setInstitution("");
     setInitialBalance("0");
 
-    setOwnerUserId(
-      members[0]?.user_id ?? ""
-    );
+    setOwnerUserId(members[0]?.user_id ?? "");
 
     setClosingDay("5");
     setDueDay("12");
 
     setAutoPayment(false);
 
-    setAutoPaymentAccountId(
-      ""
-    );
+    setAutoPaymentAccountId("");
   }
 
-  function handleOpenChange(
-    value: boolean
-  ) {
+  function handleOpenChange(value: boolean) {
     setOpen(value);
 
     if (!value) {
@@ -160,79 +94,49 @@ export function CreateAccountDialog({
     }
   }
 
-  function handleAccountTypeChange(
-    value: string
-  ) {
+  function handleAccountTypeChange(value: string) {
     setAccountType(value);
 
     /*
      * Ao sair de cartão,
      * limpa configurações específicas.
      */
-    if (
-      value !==
-      "credit_card"
-    ) {
+    if (value !== "credit_card") {
       setAutoPayment(false);
-      setAutoPaymentAccountId(
-        ""
-      );
+      setAutoPaymentAccountId("");
     }
   }
 
-  async function submit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!name.trim()) {
-      toast.error(
-        "Informe o nome da conta."
-      );
+      toast.error("Informe o nome da conta.");
       return;
     }
 
     if (!ownerUserId) {
-      toast.error(
-        "Selecione o responsável."
-      );
+      toast.error("Selecione o responsável.");
       return;
     }
 
     if (isCreditCard) {
-      const closing =
-        Number(closingDay);
+      const closing = Number(closingDay);
 
-      const due =
-        Number(dueDay);
+      const due = Number(dueDay);
 
-      if (
-        closing < 1 ||
-        closing > 31
-      ) {
-        toast.error(
-          "Informe um dia de fechamento válido."
-        );
+      if (closing < 1 || closing > 31) {
+        toast.error("Informe um dia de fechamento válido.");
         return;
       }
 
-      if (
-        due < 1 ||
-        due > 31
-      ) {
-        toast.error(
-          "Informe um dia de vencimento válido."
-        );
+      if (due < 1 || due > 31) {
+        toast.error("Informe um dia de vencimento válido.");
         return;
       }
 
-      if (
-        autoPayment &&
-        !autoPaymentAccountId
-      ) {
-        toast.error(
-          "Selecione a conta usada para pagar a fatura."
-        );
+      if (autoPayment && !autoPaymentAccountId) {
+        toast.error("Selecione a conta usada para pagar a fatura.");
         return;
       }
     }
@@ -240,64 +144,32 @@ export function CreateAccountDialog({
     setLoading(true);
 
     try {
-      const result =
-        await createFinancialAccountAction(
-          {
-            name:
-              name.trim(),
+      const result = await createFinancialAccountAction({
+        name: name.trim(),
 
-            accountType,
+        accountType,
 
-            institution:
-              institution.trim(),
+        institution: institution.trim(),
 
-            ownerUserId:
-              ownerUserId ||
-              null,
+        ownerUserId: ownerUserId || null,
 
-            initialBalance:
-              isCreditCard
-                ? 0
-                : parseCurrency(
-                    initialBalance
-                  ),
+        initialBalance: isCreditCard ? 0 : parseCurrency(initialBalance),
 
-            closingDay:
-              isCreditCard
-                ? Number(
-                    closingDay
-                  )
-                : null,
+        closingDay: isCreditCard ? Number(closingDay) : null,
 
-            dueDay:
-              isCreditCard
-                ? Number(dueDay)
-                : null,
+        dueDay: isCreditCard ? Number(dueDay) : null,
 
-            autoPayment:
-              isCreditCard
-                ? autoPayment
-                : false,
+        autoPayment: isCreditCard ? autoPayment : false,
 
-            autoPaymentAccountId:
-              isCreditCard &&
-              autoPayment
-                ? autoPaymentAccountId ||
-                  null
-                : null,
-          }
-        );
+        autoPaymentAccountId: isCreditCard && autoPayment ? autoPaymentAccountId || null : null,
+      });
 
       if (!result.success) {
-        toast.error(
-          result.message
-        );
+        toast.error(result.message);
         return;
       }
 
-      toast.success(
-        result.message
-      );
+      toast.success(result.message);
 
       setOpen(false);
 
@@ -305,14 +177,9 @@ export function CreateAccountDialog({
 
       router.refresh();
     } catch (error) {
-      console.error(
-        "Erro ao salvar conta:",
-        error
-      );
+      console.error("Erro ao salvar conta:", error);
 
-      toast.error(
-        "Não foi possível salvar a conta."
-      );
+      toast.error("Não foi possível salvar a conta.");
     } finally {
       setLoading(false);
     }
@@ -320,23 +187,13 @@ export function CreateAccountDialog({
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={() =>
-          setOpen(true)
-        }
-      >
+      <Button type="button" onClick={() => setOpen(true)}>
         <Plus className="size-4" />
 
         {triggerLabel}
       </Button>
 
-      <Dialog
-        open={open}
-        onOpenChange={
-          handleOpenChange
-        }
-      >
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             {isCreditCard && (
@@ -345,166 +202,75 @@ export function CreateAccountDialog({
               </div>
             )}
 
-            <DialogTitle>
-              {isCreditCard
-                ? "Novo cartão"
-                : "Nova conta financeira"}
-            </DialogTitle>
+            <DialogTitle>{isCreditCard ? "Novo cartão" : "Nova conta financeira"}</DialogTitle>
           </DialogHeader>
 
-          <form
-            onSubmit={submit}
-            className="space-y-5"
-          >
+          <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <Label>
-                Nome
-              </Label>
+              <Label>Nome</Label>
 
               <Input
-                placeholder={
-                  isCreditCard
-                    ? "Ex.: Nubank Renato"
-                    : "Ex.: Conta da casa"
-                }
+                placeholder={isCreditCard ? "Ex.: Nubank Renato" : "Ex.: Conta da casa"}
                 value={name}
-                onChange={(
-                  event
-                ) =>
-                  setName(
-                    event.target
-                      .value
-                  )
-                }
+                onChange={(event) => setName(event.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Tipo
-              </Label>
+              <Label>Tipo</Label>
 
               <select
-                value={
-                  accountType
-                }
-                onChange={(
-                  event
-                ) =>
-                  handleAccountTypeChange(
-                    event.target
-                      .value
-                  )
-                }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                value={accountType}
+                onChange={(event) => handleAccountTypeChange(event.target.value)}
+                className="bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                <option value="checking">
-                  Conta corrente
-                </option>
+                <option value="checking">Conta corrente</option>
 
-                <option value="savings">
-                  Poupança
-                </option>
+                <option value="savings">Poupança</option>
 
-                <option value="cash">
-                  Dinheiro
-                </option>
+                <option value="cash">Dinheiro</option>
 
-                <option value="credit_card">
-                  Cartão de crédito
-                </option>
+                <option value="credit_card">Cartão de crédito</option>
 
-                <option value="meal_voucher">
-                  Vale-refeição
-                </option>
+                <option value="meal_voucher">Vale-refeição</option>
 
-                <option value="food_voucher">
-                  Vale-alimentação
-                </option>
+                <option value="food_voucher">Vale-alimentação</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Responsável
-              </Label>
+              <Label>Responsável</Label>
 
               <select
-                value={
-                  ownerUserId
-                }
-                onChange={(
-                  event
-                ) =>
-                  setOwnerUserId(
-                    event.target
-                      .value
-                  )
-                }
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                value={ownerUserId}
+                onChange={(event) => setOwnerUserId(event.target.value)}
+                className="bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                {members.map(
-                  (member) => (
-                    <option
-                      key={
-                        member.user_id
-                      }
-                      value={
-                        member.user_id
-                      }
-                    >
-                      {
-                        member.name
-                      }
-                    </option>
-                  )
-                )}
+                {members.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label>
-                Instituição
-              </Label>
+              <Label>Instituição</Label>
 
               <Input
-                placeholder={
-                  isCreditCard
-                    ? "Ex.: Nubank"
-                    : "Ex.: Inter"
-                }
-                value={
-                  institution
-                }
-                onChange={(
-                  event
-                ) =>
-                  setInstitution(
-                    event.target
-                      .value
-                  )
-                }
+                placeholder={isCreditCard ? "Ex.: Nubank" : "Ex.: Inter"}
+                value={institution}
+                onChange={(event) => setInstitution(event.target.value)}
               />
             </div>
 
             {!isCreditCard && (
               <div className="space-y-2">
-                <Label>
-                  Saldo inicial
-                </Label>
+                <Label>Saldo inicial</Label>
 
                 <Input
-                  value={
-                    initialBalance
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setInitialBalance(
-                      event.target
-                        .value
-                    )
-                  }
+                  value={initialBalance}
+                  onChange={(event) => setInitialBalance(event.target.value)}
                   placeholder="0,00"
                   inputMode="decimal"
                 />
@@ -515,77 +281,42 @@ export function CreateAccountDialog({
               <>
                 <div className="border-t pt-5">
                   <div>
-                    <h3 className="font-semibold">
-                      Ciclo da fatura
-                    </h3>
+                    <h3 className="font-semibold">Ciclo da fatura</h3>
 
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Configure o
-                      fechamento e o
-                      vencimento do
-                      cartão.
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      Configure o fechamento e o vencimento do cartão.
                     </p>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>
-                        Fecha dia
-                      </Label>
+                      <Label>Fecha dia</Label>
 
                       <Input
                         type="number"
                         min={1}
                         max={31}
-                        value={
-                          closingDay
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setClosingDay(
-                            event
-                              .target
-                              .value
-                          )
-                        }
+                        value={closingDay}
+                        onChange={(event) => setClosingDay(event.target.value)}
                       />
 
-                      <p className="text-xs text-muted-foreground">
-                        Compras após
-                        este dia vão
-                        para a próxima
-                        fatura.
+                      <p className="text-muted-foreground text-xs">
+                        Compras após este dia vão para a próxima fatura.
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>
-                        Vence dia
-                      </Label>
+                      <Label>Vence dia</Label>
 
                       <Input
                         type="number"
                         min={1}
                         max={31}
-                        value={
-                          dueDay
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setDueDay(
-                            event
-                              .target
-                              .value
-                          )
-                        }
+                        value={dueDay}
+                        onChange={(event) => setDueDay(event.target.value)}
                       />
 
-                      <p className="text-xs text-muted-foreground">
-                        Dia em que a
-                        fatura vence.
-                      </p>
+                      <p className="text-muted-foreground text-xs">Dia em que a fatura vence.</p>
                     </div>
                   </div>
                 </div>
@@ -594,105 +325,49 @@ export function CreateAccountDialog({
                   <label className="flex cursor-pointer items-start gap-3 rounded-2xl border p-4">
                     <input
                       type="checkbox"
-                      checked={
-                        autoPayment
-                      }
-                      onChange={(
-                        event
-                      ) => {
-                        const checked =
-                          event
-                            .target
-                            .checked;
+                      checked={autoPayment}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
 
-                        setAutoPayment(
-                          checked
-                        );
+                        setAutoPayment(checked);
 
-                        if (
-                          !checked
-                        ) {
-                          setAutoPaymentAccountId(
-                            ""
-                          );
+                        if (!checked) {
+                          setAutoPaymentAccountId("");
                         }
                       }}
                       className="mt-1"
                     />
 
                     <div>
-                      <p className="font-medium">
-                        Pagamento
-                        automático
-                      </p>
+                      <p className="font-medium">Pagamento automático</p>
 
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Após o
-                        vencimento,
-                        o Casa+
-                        considera a
-                        fatura paga
-                        automaticamente.
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        Após o vencimento, o Casa+ considera a fatura paga automaticamente.
                       </p>
                     </div>
                   </label>
 
                   {autoPayment && (
                     <div className="mt-4 space-y-2">
-                      <Label>
-                        Conta usada
-                        para pagar a
-                        fatura
-                      </Label>
+                      <Label>Conta usada para pagar a fatura</Label>
 
                       <select
-                        value={
-                          autoPaymentAccountId
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setAutoPaymentAccountId(
-                            event
-                              .target
-                              .value
-                          )
-                        }
-                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        value={autoPaymentAccountId}
+                        onChange={(event) => setAutoPaymentAccountId(event.target.value)}
+                        className="bg-background h-10 w-full rounded-md border px-3 text-sm"
                       >
-                        <option value="">
-                          Selecione...
-                        </option>
+                        <option value="">Selecione...</option>
 
-                        {paymentAccounts.map(
-                          (
-                            account
-                          ) => (
-                            <option
-                              key={
-                                account.id
-                              }
-                              value={
-                                account.id
-                              }
-                            >
-                              {
-                                account.name
-                              }
-                            </option>
-                          )
-                        )}
+                        {paymentAccounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name}
+                          </option>
+                        ))}
                       </select>
 
-                      {paymentAccounts.length ===
-                        0 && (
+                      {paymentAccounts.length === 0 && (
                         <p className="text-xs text-amber-600">
-                          Cadastre
-                          primeiro uma
-                          conta corrente
-                          ou poupança
-                          para usar no
-                          pagamento
+                          Cadastre primeiro uma conta corrente ou poupança para usar no pagamento
                           automático.
                         </p>
                       )}
@@ -706,39 +381,23 @@ export function CreateAccountDialog({
               <Button
                 type="button"
                 variant="outline"
-                disabled={
-                  loading
-                }
-                onClick={() =>
-                  handleOpenChange(
-                    false
-                  )
-                }
+                disabled={loading}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancelar
               </Button>
 
-              <Button
-                type="submit"
-                disabled={
-                  loading
-                }
-              >
+              <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-
                     Salvando...
                   </>
                 ) : (
                   <>
-                    {isCreditCard && (
-                      <CreditCard className="size-4" />
-                    )}
+                    {isCreditCard && <CreditCard className="size-4" />}
 
-                    {isCreditCard
-                      ? "Salvar cartão"
-                      : "Salvar conta"}
+                    {isCreditCard ? "Salvar cartão" : "Salvar conta"}
                   </>
                 )}
               </Button>

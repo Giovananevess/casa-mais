@@ -1,7 +1,4 @@
-export type FinancialInsightType =
-  | "positive"
-  | "warning"
-  | "neutral";
+export type FinancialInsightType = "positive" | "warning" | "neutral";
 
 export type FinancialInsight = {
   id: string;

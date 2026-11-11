@@ -1,16 +1,11 @@
 "use client";
 
-import {
-  CalendarSync,
-  Layers3,
-} from "lucide-react";
+import { CalendarSync, Layers3 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
-import type {
-  CalendarExpense,
-} from "@/types/calendar";
+import type { CalendarExpense } from "@/types/calendar";
 
 type CalendarEventProps = {
   expense: CalendarExpense;
@@ -18,12 +13,8 @@ type CalendarEventProps = {
   compact?: boolean;
 };
 
-function getEventStyles(
-  expense: CalendarExpense
-) {
-  if (
-    expense.display_status === "paid"
-  ) {
+function getEventStyles(expense: CalendarExpense) {
+  if (expense.display_status === "paid") {
     return {
       container:
         "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/15 dark:text-emerald-200",
@@ -31,10 +22,7 @@ function getEventStyles(
     };
   }
 
-  if (
-    expense.display_status ===
-    "overdue"
-  ) {
+  if (expense.display_status === "overdue") {
     return {
       container:
         "border-red-500/20 bg-red-500/10 text-red-800 hover:bg-red-500/15 dark:text-red-200",
@@ -42,10 +30,7 @@ function getEventStyles(
     };
   }
 
-  if (
-    expense.expense_type ===
-    "installment"
-  ) {
+  if (expense.expense_type === "installment") {
     return {
       container:
         "border-blue-500/20 bg-blue-500/10 text-blue-800 hover:bg-blue-500/15 dark:text-blue-200",
@@ -68,54 +53,34 @@ function getEventStyles(
   };
 }
 
-export function CalendarEvent({
-  expense,
-  onClick,
-  compact = false,
-}: CalendarEventProps) {
-  const styles =
-    getEventStyles(expense);
+export function CalendarEvent({ expense, onClick, compact = false }: CalendarEventProps) {
+  const styles = getEventStyles(expense);
 
   return (
     <button
       type="button"
       className={cn(
         "group/event flex w-full items-center gap-2 overflow-hidden rounded-lg border text-left transition",
-        compact
-          ? "px-2 py-1.5"
-          : "px-2.5 py-2",
-        styles.container
+        compact ? "px-2 py-1.5" : "px-2.5 py-2",
+        styles.container,
       )}
       onClick={onClick}
     >
-      <span
-        className={cn(
-          "size-1.5 shrink-0 rounded-full",
-          styles.dot
-        )}
-      />
+      <span className={cn("size-1.5 shrink-0 rounded-full", styles.dot)} />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium">
-          {expense.title}
-        </p>
+        <p className="truncate text-xs font-medium">{expense.title}</p>
 
         {!compact && (
           <p className="mt-0.5 truncate text-[11px] opacity-75">
-            {formatCurrency(
-              Number(expense.amount)
-            )}
+            {formatCurrency(Number(expense.amount))}
           </p>
         )}
       </div>
 
-      {expense.is_recurring && (
-        <CalendarSync className="size-3 shrink-0 opacity-60" />
-      )}
+      {expense.is_recurring && <CalendarSync className="size-3 shrink-0 opacity-60" />}
 
-      {expense.installment_number && (
-        <Layers3 className="size-3 shrink-0 opacity-60" />
-      )}
+      {expense.installment_number && <Layers3 className="size-3 shrink-0 opacity-60" />}
     </button>
   );
 }

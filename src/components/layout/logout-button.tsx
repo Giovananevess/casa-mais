@@ -26,10 +26,7 @@ export function LogoutButton() {
       router.replace("/login");
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Não foi possível sair da conta.";
+      const message = error instanceof Error ? error.message : "Não foi possível sair da conta.";
 
       toast.error(message);
     } finally {
@@ -39,22 +36,16 @@ export function LogoutButton() {
 
   return (
     <Button
-  type="button"
-  variant="ghost"
-  size="sm"
-  className="rounded-xl text-muted-foreground hover:text-foreground"
-  onClick={handleLogout}
-  disabled={isLoading}
->
-  {isLoading ? (
-    <Loader2 className="animate-spin" />
-  ) : (
-    <LogOut />
-  )}
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="text-muted-foreground hover:text-foreground rounded-xl"
+      onClick={handleLogout}
+      disabled={isLoading}
+    >
+      {isLoading ? <Loader2 className="animate-spin" /> : <LogOut />}
 
-  <span className="hidden lg:inline">
-    Sair
-  </span>
-</Button>
+      <span className="hidden lg:inline">Sair</span>
+    </Button>
   );
 }

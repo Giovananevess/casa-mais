@@ -19,39 +19,33 @@ type MonthlyChartProps = {
   data: DashboardTrendItem[];
 };
 
-export function MonthlyChart({
-  data,
-}: MonthlyChartProps) {
-  const hasData = data.some(
-    (item) => item.income > 0 || item.expenses > 0
-  );
+export function MonthlyChart({ data }: MonthlyChartProps) {
+  const hasData = data.some((item) => item.income > 0 || item.expenses > 0);
 
   return (
-    <article className="group rounded-3xl border bg-card p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
+    <article className="group bg-card rounded-3xl border p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
             Últimos seis meses
           </p>
 
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">
-            Evolução financeira
-          </h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">Evolução financeira</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             Comparação entre receitas e despesas da casa.
           </p>
         </div>
 
         {hasData && (
-          <div className="flex items-center gap-4 rounded-xl border bg-muted/20 px-3 py-2 text-xs">
+          <div className="bg-muted/20 flex items-center gap-4 rounded-xl border px-3 py-2 text-xs">
             <span className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-primary" />
+              <span className="bg-primary size-2 rounded-full" />
               Receitas
             </span>
 
             <span className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-muted-foreground" />
+              <span className="bg-muted-foreground size-2 rounded-full" />
               Despesas
             </span>
           </div>
@@ -78,52 +72,20 @@ export function MonthlyChart({
               }}
             >
               <defs>
-                <linearGradient
-                  id="incomeGradient"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.28}
-                  />
+                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
 
-                  <stop
-                    offset="100%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                 </linearGradient>
 
-                <linearGradient
-                  id="expenseGradient"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="var(--muted-foreground)"
-                    stopOpacity={0.15}
-                  />
+                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--muted-foreground)" stopOpacity={0.15} />
 
-                  <stop
-                    offset="100%"
-                    stopColor="var(--muted-foreground)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="100%" stopColor="var(--muted-foreground)" stopOpacity={0} />
                 </linearGradient>
               </defs>
 
-              <CartesianGrid
-                vertical={false}
-                strokeDasharray="4 8"
-                stroke="var(--border)"
-              />
+              <CartesianGrid vertical={false} strokeDasharray="4 8" stroke="var(--border)" />
 
               <XAxis
                 dataKey="month"
@@ -160,12 +122,9 @@ export function MonthlyChart({
                   borderRadius: "16px",
                   border: "1px solid var(--border)",
                   background: "var(--card)",
-                  boxShadow:
-                    "0 16px 40px rgba(0, 0, 0, 0.08)",
+                  boxShadow: "0 16px 40px rgba(0, 0, 0, 0.08)",
                 }}
-                formatter={(value) =>
-                  formatCurrency(Number(value))
-                }
+                formatter={(value) => formatCurrency(Number(value))}
               />
 
               <Area

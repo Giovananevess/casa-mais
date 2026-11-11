@@ -4,29 +4,17 @@ export type MoneyBox = {
 
   name: string;
 
-  owner_user_id:
-    | string
-    | null;
+  owner_user_id: string | null;
 
-  owner_name:
-    | string
-    | null;
+  owner_name: string | null;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
-  target_amount:
-    | number
-    | null;
+  target_amount: number | null;
 
-  goal_id:
-    | string
-    | null;
+  goal_id: string | null;
 
-  goal_name:
-    | string
-    | null;
+  goal_name: string | null;
 
   balance: number;
 
@@ -43,23 +31,15 @@ export type MoneyBoxTransaction = {
   user_id: string;
   user_name: string;
 
-  account_id:
-    | string
-    | null;
+  account_id: string | null;
 
-  account_name:
-    | string
-    | null;
+  account_name: string | null;
 
-  transaction_type:
-    | "deposit"
-    | "withdrawal";
+  transaction_type: "deposit" | "withdrawal";
 
   amount: number;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
   transaction_date: string;
 
