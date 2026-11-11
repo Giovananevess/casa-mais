@@ -1,5 +1,6 @@
 "use client";
 
+import { todayISO } from "@/lib/dates";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -58,13 +59,7 @@ type FormState = {
     | "other";
 };
 
-function getToday() {
-  const now = new Date();
-
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-
-  return localDate.toISOString().slice(0, 10);
-}
+const getToday = todayISO;
 
 function createInitialState(options: ExpenseFormOptions): FormState {
   return {

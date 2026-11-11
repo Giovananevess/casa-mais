@@ -1,5 +1,6 @@
 "use client";
 
+import { todayISO } from "@/lib/dates";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Banknote, Loader2, Plus } from "lucide-react";
@@ -21,11 +22,7 @@ import type { FinancialAccount } from "@/types/finance";
 
 import type { GoalMember } from "@/types/goals";
 
-function getToday() {
-  const now = new Date();
-
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
+const getToday = todayISO;
 
 function parseCurrency(value: string) {
   const normalized = value.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");

@@ -1,5 +1,6 @@
 "use client";
 
+import { todayISO } from "@/lib/dates";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, CreditCard, Layers3, Loader2, Plus } from "lucide-react";
@@ -24,11 +25,7 @@ type InstallmentsDialogProps = {
   options: ExpenseFormOptions;
 };
 
-function getToday() {
-  const now = new Date();
-
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
+const getToday = todayISO;
 
 function parseCurrencyInput(value: string) {
   const parsed = Number(value.replace(/\s/g, "").replace(/\./g, "").replace(",", "."));

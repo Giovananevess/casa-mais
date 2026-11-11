@@ -1,5 +1,6 @@
 "use client";
 
+import { todayISO } from "@/lib/dates";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, PiggyBank, Plus } from "lucide-react";
@@ -25,11 +26,7 @@ type ContributionDialogProps = {
   members: GoalMember[];
 };
 
-function getToday() {
-  const now = new Date();
-
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
+const getToday = todayISO;
 
 function parseCurrency(value: string) {
   const normalized = value.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
