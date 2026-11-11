@@ -1,49 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
+import { getSessionContext } from "@/lib/auth/session";
 
 import type { MoneyBox, MoneyBoxTransaction } from "@/types/money-boxes";
 
-function firstRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) {
-    return null;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value;
-}
-
-async function getContext() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Usuário não autenticado.");
-  }
-
-  const { data: membership } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!membership) {
-    throw new Error("Casa não encontrada.");
-  }
-
-  return {
-    supabase,
-
-    householdId: membership.household_id,
-  };
-}
-
 export async function getMoneyBoxes(): Promise<MoneyBox[]> {
-  const { supabase, householdId } = await getContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const { data, error } = await supabase
     .from("money_boxes")
@@ -125,7 +86,7 @@ export async function getMoneyBoxes(): Promise<MoneyBox[]> {
 }
 
 export async function getMoneyBoxTransactions(moneyBoxId: string): Promise<MoneyBoxTransaction[]> {
-  const { supabase, householdId } = await getContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const { data, error } = await supabase
     .from("money_box_transactions")

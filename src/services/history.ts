@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionContext } from "@/lib/auth/session";
+import { todayISO } from "@/lib/dates";
 import { getExpenseFormOptions } from "@/services/expenses";
 
 import type { ExpenseListItem, ExpenseStatus } from "@/types/expenses";
@@ -60,15 +61,7 @@ const expenseSelect = `
   )
 `;
 
-function getTodayString() {
-  const today = new Date();
-
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
+const getTodayString = todayISO;
 
 function getDisplayStatus(expense: ExpenseListItem): ExpenseStatus {
   if (expense.status === "pending" && expense.due_date < getTodayString()) {
@@ -90,43 +83,31 @@ function normalizeExpense(expense: unknown): HistoryExpense {
   };
 }
 
-async function getHouseholdId() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Usuário não autenticado.");
-  }
-
-  const { data: membership, error } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Erro ao consultar a casa: ${error.message}`);
-  }
-
-  if (!membership) {
-    throw new Error("O usuário não pertence a uma casa.");
-  }
-
-  return {
-    supabase,
-    householdId: membership.household_id,
-  };
+/**
+ * Subconjunto da API do query builder do Supabase usado pelos filtros.
+ * Tipar estruturalmente evita `any` sem acoplar ao tipo genérico do PostgREST.
+ */
+interface FilterableQuery<Q> {
+  gte(column: string, value: string): Q;
+  lte(column: string, value: string): Q;
+  lt(column: string, value: string): Q;
+  eq(column: string, value: string | boolean): Q;
+  ilike(column: string, pattern: string): Q;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyHistoryFilters<T extends Record<string, any> = any>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  query: T | any,
+interface SortableQuery<Q> {
+  order(column: string, options: { ascending: boolean }): Q;
+}
+
+/** Escapa curingas do LIKE para que a busca seja literal. */
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+export function applyHistoryFilters<Q extends FilterableQuery<Q>>(
+  query: Q,
   filters: HistoryFilters,
-): any {
+): Q {
   let filtered = query.gte("due_date", filters.startDate).lte("due_date", filters.endDate);
 
   /*
@@ -158,19 +139,13 @@ function applyHistoryFilters<T extends Record<string, any> = any>(
   }
 
   if (filters.search) {
-    filtered = filtered.ilike("title", `%${filters.search}%`);
+    filtered = filtered.ilike("title", `%${escapeLike(filters.search)}%`);
   }
 
   return filtered;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applySort<T extends Record<string, any> = any>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  query: T | any,
-  filters: HistoryFilters,
-): any {
+export function applySort<Q extends SortableQuery<Q>>(query: Q, filters: HistoryFilters): Q {
   if (filters.sort === "oldest") {
     return query
       .order("due_date", {
@@ -348,7 +323,7 @@ function calculatePeopleSummary(
 }
 
 export async function getHistoryData(filters: HistoryFilters): Promise<HistoryPageData> {
-  const { supabase, householdId } = await getHouseholdId();
+  const { supabase, householdId } = await getSessionContext();
 
   const options = await getExpenseFormOptions();
 
@@ -358,10 +333,7 @@ export async function getHistoryData(filters: HistoryFilters): Promise<HistoryPa
    */
   let reportQuery = supabase.from("expenses").select(expenseSelect).eq("household_id", householdId);
 
-  reportQuery = applyHistoryFilters(reportQuery, {
-    ...filters,
-    page: 1,
-  });
+  reportQuery = applyHistoryFilters(reportQuery, filters);
 
   reportQuery = applySort(reportQuery, filters);
 
@@ -373,36 +345,13 @@ export async function getHistoryData(filters: HistoryFilters): Promise<HistoryPa
 
   const allExpenses = (reportRows ?? []).map(normalizeExpense);
 
-  /*
-   * A paginação é feita no banco para
-   * a lista principal.
-   */
-  const start = (filters.page - 1) * filters.pageSize;
-
-  const end = start + filters.pageSize - 1;
-
-  let pageQuery = supabase
-    .from("expenses")
-    .select(expenseSelect, {
-      count: "exact",
-    })
-    .eq("household_id", householdId);
-
-  pageQuery = applyHistoryFilters(pageQuery, filters);
-
-  pageQuery = applySort(pageQuery, filters);
-
-  const { data: pageRows, count, error: pageError } = await pageQuery.range(start, end);
-
-  if (pageError) {
-    throw new Error(`Erro ao carregar o histórico: ${pageError.message}`);
-  }
-
-  const totalRows = count ?? 0;
-
+  // A consulta acima já traz todo o período filtrado e ordenado,
+  // então a página atual é recortada em memória (uma ida ao banco a menos).
+  const totalRows = allExpenses.length;
   const totalPages = Math.max(Math.ceil(totalRows / filters.pageSize), 1);
-
-  const expenses = (pageRows ?? []).map(normalizeExpense);
+  const currentPage = Math.min(filters.page, totalPages);
+  const start = (currentPage - 1) * filters.pageSize;
+  const expenses = allExpenses.slice(start, start + filters.pageSize);
 
   return {
     expenses,
@@ -416,8 +365,42 @@ export async function getHistoryData(filters: HistoryFilters): Promise<HistoryPa
 
     totalRows,
     totalPages,
-    currentPage: Math.min(filters.page, totalPages),
+    currentPage,
     pageSize: filters.pageSize,
     filters,
   };
+}
+
+const EXPORT_SELECT = `
+  title,
+  description,
+  amount,
+  due_date,
+  status,
+  expense_type,
+  split_type,
+  payment_method,
+  is_recurring,
+  installment_number,
+  installment_total,
+  category:categories ( name ),
+  account:accounts!expenses_account_id_fkey ( name ),
+  paid_by_profile:profiles!expenses_paid_by_fkey ( name )
+`;
+
+/** Linhas do histórico para exportação, com os mesmos filtros da tela. */
+export async function getHistoryExportRows(filters: HistoryFilters): Promise<HistoryExpense[]> {
+  const { supabase, householdId } = await getSessionContext();
+
+  let query = supabase.from("expenses").select(EXPORT_SELECT).eq("household_id", householdId);
+  query = applyHistoryFilters(query, filters);
+  query = applySort(query, filters);
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Erro ao exportar o histórico: ${error.message}`);
+  }
+
+  return (data ?? []).map(normalizeExpense);
 }

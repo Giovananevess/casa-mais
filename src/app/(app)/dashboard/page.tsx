@@ -1,3 +1,5 @@
+import { addMonths, currentMonth } from "@/lib/dates";
+import { getSessionContext } from "@/lib/auth/session";
 import { CircleDollarSign, Clock3, PiggyBank, WalletCards } from "lucide-react";
 
 import { MoneyBoxSummary } from "@/components/dashboard/money-box-summary";
@@ -10,26 +12,17 @@ import { SummaryCard } from "@/components/dashboard/summary-card";
 import { UpcomingExpenses } from "@/components/dashboard/upcoming-expenses";
 import { FinancialTimeline } from "@/components/dashboard/financial-timeline";
 import { FinancialInsights } from "@/components/dashboard/financial-insights";
-import { measure } from "@/lib/performace";
+import { measure } from "@/lib/performance";
 import { FinancialAutomationTrigger } from "@/components/finance/financial-automation-trigger";
 
 import { NewExpenseDialog } from "@/components/expenses/new-expense-dialog";
 
 import { formatCurrency } from "@/lib/currency";
-import { createClient } from "@/lib/supabase/server";
 
 import { getExpenseFormOptions } from "@/services/expenses";
 import { getDashboardSummary, getDashboardTrend } from "@/services/dashboard";
 import { getTimeline } from "@/services/timeline";
 import { getFinancialInsights } from "@/services/insights";
-
-function getPreviousMonth(referenceMonth: string) {
-  const [year, month] = referenceMonth.split("-").map(Number);
-
-  const previousMonth = new Date(Date.UTC(year, month - 2, 1));
-
-  return previousMonth.toISOString().slice(0, 10);
-}
 
 function calculateVariation(currentValue: number, previousValue: number) {
   if (previousValue === 0) {
@@ -40,40 +33,30 @@ function calculateVariation(currentValue: number, previousValue: number) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const { supabase, user } = await getSessionContext();
+  const month = currentMonth();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    profile,
+    currentDashboard,
+    previousDashboard,
+    trend,
+    expenseOptions,
+    timeline,
+    insights,
+    moneyBoxes,
+  ] = await Promise.all([
+    supabase.from("profiles").select("name").eq("id", user.id).maybeSingle(),
+    measure("Dashboard atual", () => getDashboardSummary(month)),
+    measure("Dashboard anterior", () => getDashboardSummary(addMonths(month, -1))),
+    measure("Dashboard trend", () => getDashboardTrend()),
+    measure("Expense options", () => getExpenseFormOptions()),
+    measure("Timeline", () => getTimeline(20)),
+    measure("Financial insights", () => getFinancialInsights()),
+    measure("Money boxes", () => getMoneyBoxes()),
+  ]);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name")
-    .eq("id", user?.id ?? "")
-    .maybeSingle();
-
-  const name = profile?.name ?? user?.email?.split("@")[0] ?? "Usuário";
-
-  const [currentDashboard, trend, expenseOptions, timeline, insights, moneyBoxes] =
-    await Promise.all([
-      measure("Dashboard atual", () => getDashboardSummary()),
-
-      measure("Dashboard trend", () => getDashboardTrend()),
-
-      measure("Expense options", () => getExpenseFormOptions()),
-
-      measure("Timeline", () => getTimeline(20)),
-
-      measure("Financial insights", () => getFinancialInsights()),
-
-      getMoneyBoxes(),
-    ]);
-
-  const previousMonth = getPreviousMonth(currentDashboard.reference_month);
-
-  const previousDashboard = await measure("Dashboard anterior", () =>
-    getDashboardSummary(previousMonth),
-  );
+  const name = profile.data?.name ?? user.email?.split("@")[0] ?? "Usuário";
 
   const summary = currentDashboard.summary;
   const previousSummary = previousDashboard.summary;
@@ -191,6 +174,9 @@ export default async function DashboardPage() {
       </section>
 
       <PaymentsByPerson people={currentDashboard.payments_by_person} />
+
+      <MoneyBoxSummary boxes={moneyBoxes} />
+
       <section className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <FinancialTimeline groups={timeline} />
 

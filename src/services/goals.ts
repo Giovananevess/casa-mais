@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { cache } from "react";
+import { getSessionContext } from "@/lib/auth/session";
+import { daysBetween, isIsoDate, todayISO } from "@/lib/dates";
 
 import type {
   Goal,
@@ -19,13 +21,10 @@ function toNumber(value: unknown): number {
 function getDaysRemaining(targetDate: string | null): number | null {
   if (!targetDate) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const target = targetDate.slice(0, 10);
+  if (!isIsoDate(target)) return null;
 
-  const target = new Date(`${targetDate}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return null;
-
-  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
+  return daysBetween(todayISO(), target);
 }
 
 function enrichGoal(goal: Goal): Goal {
@@ -116,34 +115,8 @@ function buildGoalInsights(goal: Goal, contributions: GoalContribution[]): GoalI
   return insights;
 }
 
-async function getGoalContext() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Usuário não autenticado.");
-  }
-
-  const { data: membership, error } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error || !membership) {
-    throw new Error(error?.message ?? "Casa não encontrada.");
-  }
-
-  return {
-    supabase,
-    householdId: membership.household_id,
-  };
-}
-
-export async function getGoals(): Promise<Goal[]> {
-  const { supabase, householdId } = await getGoalContext();
+export const getGoals = cache(async (): Promise<Goal[]> => {
+  const { supabase, householdId } = await getSessionContext();
 
   const { data, error } = await supabase
     .from("goals")
@@ -187,10 +160,10 @@ export async function getGoals(): Promise<Goal[]> {
       initial_amount: toNumber(goal.initial_amount),
     } as Goal),
   );
-}
+});
 
 export async function getGoalMembers(): Promise<GoalMember[]> {
-  const { supabase, householdId } = await getGoalContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const { data: members, error } = await supabase
     .from("household_members")
@@ -268,7 +241,7 @@ function buildChart(contributions: GoalContribution[]): GoalChartItem[] {
 }
 
 export async function getGoalDetails(goalId: string): Promise<GoalDetails> {
-  const { supabase, householdId } = await getGoalContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const [goalResult, contributionsResult, historyResult, members] = await Promise.all([
     supabase

@@ -1,429 +1,166 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import type { z } from "zod";
 
-import { createClient } from "@/lib/supabase/server";
+import { dbError, fail, invalid, ok, withSession, type ActionResult } from "@/lib/actions";
+import { belongsToHousehold, isHouseholdMember } from "@/lib/auth/ownership";
+import { revalidateAreas } from "@/lib/revalidate";
+import { accountSchema, creditCardInvoiceSchema, incomeSchema } from "@/lib/validations/finance";
 
-import { accountSchema, incomeSchema } from "@/lib/validations/finance";
+const BENEFIT_TYPES = new Set(["meal_voucher", "food_voucher"]);
 
-import { getHouseholdContext } from "@/services/household-context";
+export async function createFinancialAccountAction(input: unknown): Promise<ActionResult> {
+  const parsed = accountSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados da conta.");
 
-/*
- * =====================================================
- * REVALIDAÇÃO
- * =====================================================
- */
+  const values = parsed.data;
+  const isCreditCard = values.accountType === "credit_card";
 
-function refreshFinance() {
-  revalidatePath("/dashboard");
-
-  revalidatePath("/contas");
-
-  revalidatePath("/receitas");
-
-  revalidatePath("/contas-financeiras");
-
-  revalidatePath("/historico");
-
-  revalidatePath("/calendario");
-
-  revalidatePath("/configuracoes");
-}
-
-/*
- * =====================================================
- * CRIAR CONTA FINANCEIRA
- * =====================================================
- */
-
-export async function createFinancialAccountAction(input: unknown) {
-  const validation = accountSchema.safeParse(input);
-
-  if (!validation.success) {
-    return {
-      success: false as const,
-
-      message: "Revise os dados da conta.",
-
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
+  if (isCreditCard && (!values.closingDay || !values.dueDay)) {
+    return fail("Informe o dia de fechamento e o dia de vencimento do cartão.");
   }
 
-  const values = validation.data;
+  if (isCreditCard && values.autoPayment && !values.autoPaymentAccountId) {
+    return fail("Selecione a conta que fará o pagamento automático do cartão.");
+  }
 
-  try {
-    const { supabase, user, householdId } = await getHouseholdContext();
+  return withSession(async (context) => {
+    const { supabase, user, householdId } = context;
 
-    const isBenefit = ["meal_voucher", "food_voucher"].includes(values.accountType);
-
-    /*
-     * Se for cartão e auto pagamento
-     * estiver ativado, exigimos uma
-     * conta pagadora.
-     */
-    if (
-      values.accountType === "credit_card" &&
-      values.autoPayment &&
-      !values.autoPaymentAccountId
-    ) {
-      return {
-        success: false as const,
-
-        message: "Selecione a conta que fará o pagamento automático do cartão.",
-      };
+    if (values.ownerUserId && !(await isHouseholdMember(context, values.ownerUserId))) {
+      return fail("O titular precisa ser um membro da casa.");
     }
 
-    /*
-     * Evita cartão pagando cartão.
-     */
-    if (values.accountType === "credit_card" && values.autoPaymentAccountId) {
-      const { data: paymentAccount, error: paymentAccountError } = await supabase
+    if (isCreditCard && values.autoPayment && values.autoPaymentAccountId) {
+      const { data: payer, error: payerError } = await supabase
         .from("accounts")
-        .select(
-          `
-          id,
-          account_type,
-          household_id,
-          is_active
-        `,
-        )
+        .select("account_type, is_active")
         .eq("id", values.autoPaymentAccountId)
         .eq("household_id", householdId)
         .maybeSingle();
 
-      if (paymentAccountError) {
-        return {
-          success: false as const,
-
-          message: paymentAccountError.message,
-        };
-      }
-
-      if (!paymentAccount || !paymentAccount.is_active) {
-        return {
-          success: false as const,
-
-          message: "A conta de pagamento automático é inválida.",
-        };
-      }
-
-      if (paymentAccount.account_type === "credit_card") {
-        return {
-          success: false as const,
-
-          message: "A conta pagadora não pode ser outro cartão de crédito.",
-        };
+      if (payerError) return dbError(payerError, "Não foi possível validar a conta pagadora.");
+      if (!payer || !payer.is_active) return fail("A conta de pagamento automático é inválida.");
+      if (payer.account_type === "credit_card") {
+        return fail("A conta pagadora não pode ser outro cartão de crédito.");
       }
     }
 
     const { error } = await supabase.from("accounts").insert({
       household_id: householdId,
-
-      name: values.name.trim(),
-
+      name: values.name,
       account_type: values.accountType,
-
-      institution: values.institution?.trim() || null,
-
+      institution: values.institution || null,
       owner_user_id: values.ownerUserId || null,
-
       initial_balance: values.initialBalance,
-
       current_balance: values.initialBalance,
-
-      closing_day: values.accountType === "credit_card" ? values.closingDay : null,
-
-      due_day: values.accountType === "credit_card" ? values.dueDay : null,
-
-      auto_payment: values.accountType === "credit_card" ? values.autoPayment : false,
-
+      closing_day: isCreditCard ? values.closingDay : null,
+      due_day: isCreditCard ? values.dueDay : null,
+      auto_payment: isCreditCard ? values.autoPayment : false,
       auto_payment_account_id:
-        values.accountType === "credit_card" && values.autoPayment
-          ? values.autoPaymentAccountId || null
-          : null,
-
-      is_benefit: isBenefit,
-
+        isCreditCard && values.autoPayment ? values.autoPaymentAccountId || null : null,
+      is_benefit: BENEFIT_TYPES.has(values.accountType),
       is_active: true,
-
-      /*
-       * Só mantenha essa linha
-       * se accounts tiver created_by.
-       */
       created_by: user.id,
     });
 
-    if (error) {
-      console.error("Erro ao criar conta financeira:", error);
+    if (error) return dbError(error, "Não foi possível criar a conta financeira.");
 
-      return {
-        success: false as const,
-
-        message: error.message,
-      };
-    }
-
-    refreshFinance();
-
-    return {
-      success: true as const,
-
-      message: "Conta financeira criada com sucesso.",
-    };
-  } catch (error) {
-    console.error("Erro inesperado ao criar conta financeira:", error);
-
-    return {
-      success: false as const,
-
-      message:
-        error instanceof Error ? error.message : "Não foi possível criar a conta financeira.",
-    };
-  }
+    revalidateAreas("finance");
+    return ok("Conta financeira criada com sucesso.");
+  });
 }
 
-/*
- * =====================================================
- * CRIAR RECEITA
- * =====================================================
- */
+export async function createIncomeAction(input: unknown): Promise<ActionResult> {
+  const parsed = incomeSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados da receita.");
 
-export async function createIncomeAction(input: unknown) {
-  const validation = incomeSchema.safeParse(input);
+  const values = parsed.data;
+  const isBenefit = BENEFIT_TYPES.has(values.incomeType);
 
-  if (!validation.success) {
-    return {
-      success: false as const,
+  return withSession(async (context) => {
+    const { supabase } = context;
 
-      message: "Revise os dados da receita.",
+    const [memberOk, accountOk] = await Promise.all([
+      isHouseholdMember(context, values.userId),
+      values.accountId ? belongsToHousehold(context, "accounts", values.accountId) : true,
+    ]);
 
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
-  }
-
-  const values = validation.data;
-
-  try {
-    /*
-     * Aqui podemos usar createClient
-     * normalmente porque as RPCs usam
-     * auth.uid().
-     */
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return {
-        success: false as const,
-
-        message: "Sua sessão expirou. Entre novamente.",
-      };
-    }
-
-    const isBenefit = ["meal_voucher", "food_voucher"].includes(values.incomeType);
+    if (!memberOk) return fail("Quem recebeu precisa ser um membro da casa.");
+    if (!accountOk) return fail("Conta financeira não encontrada.");
 
     let recurringIncomeId: string | null = null;
 
-    /*
-     * =====================================================
-     * 1. RECORRÊNCIA
-     * =====================================================
-     */
-
     if (values.recurring) {
-      const {
-        data: recurringData,
-
-        error: recurringError,
-      } = await supabase.rpc("create_recurring_income", {
+      const { data, error } = await supabase.rpc("create_recurring_income", {
         p_user_id: values.userId,
-
         p_account_id: values.accountId || null,
-
         p_income_type: values.incomeType,
-
         p_description: values.description,
-
         p_amount: values.amount,
-
         p_day_of_month: values.dayOfMonth ?? Number(values.receivedDate.slice(8, 10)),
-
         p_is_benefit: isBenefit,
-
         p_start_date: values.receivedDate,
-
         p_end_date: null,
       });
 
-      if (recurringError) {
-        console.error("Erro ao criar receita recorrente:", recurringError);
-
-        if (recurringError.code === "23505") {
-          return {
-            success: false as const,
-
-            message:
-              "Já existe uma receita recorrente igual para essa pessoa. Edite a recorrência em Configurações.",
-          };
-        }
-
-        return {
-          success: false as const,
-
-          message: recurringError.message,
-        };
+      if (error?.code === "23505") {
+        return fail(
+          "Já existe uma receita recorrente igual para essa pessoa. Edite a recorrência em Configurações.",
+        );
       }
 
-      recurringIncomeId = recurringData ? String(recurringData) : null;
+      if (error) return dbError(error, "Não foi possível criar a receita recorrente.");
+
+      recurringIncomeId = data ? String(data) : null;
     }
 
-    /*
-     * =====================================================
-     * 2. RECEITA DO MÊS
-     * =====================================================
-     */
-
-    const { error: incomeError } = await supabase.rpc("create_household_income", {
+    const { error } = await supabase.rpc("create_household_income", {
       p_user_id: values.userId,
-
       p_account_id: values.accountId || null,
-
       p_income_type: values.incomeType,
-
       p_description: values.description,
-
       p_amount: values.amount,
-
       p_received_date: values.receivedDate,
-
       p_is_benefit: isBenefit,
-
       p_recurring_income_id: recurringIncomeId,
     });
 
-    if (incomeError) {
-      console.error("Erro ao criar receita:", incomeError);
+    if (error) return dbError(error, "Não foi possível cadastrar a receita.");
 
-      return {
-        success: false as const,
-
-        message: incomeError.message,
-      };
-    }
-
-    refreshFinance();
-
-    return {
-      success: true as const,
-
-      message: values.recurring
+    revalidateAreas("finance");
+    return ok(
+      values.recurring
         ? "Receita cadastrada e recorrência mensal criada."
         : "Receita cadastrada com sucesso.",
-    };
-  } catch (error) {
-    console.error("Erro inesperado ao cadastrar receita:", error);
-
-    return {
-      success: false as const,
-
-      message: error instanceof Error ? error.message : "Não foi possível cadastrar a receita.",
-    };
-  }
+    );
+  });
 }
 
-/*
- * =====================================================
- * CRIAR FATURA DE CARTÃO
- * =====================================================
- */
-
-export async function createCreditCardInvoiceAction(input: {
-  creditCardId: string;
-
-  referenceMonth: string;
-
-  amount: number;
-}) {
-  if (!input.creditCardId) {
-    return {
-      success: false as const,
-
-      message: "Selecione o cartão.",
-    };
+export async function createCreditCardInvoiceAction(
+  input: z.input<typeof creditCardInvoiceSchema>,
+): Promise<ActionResult<{ expenseId: string | null }>> {
+  const parsed = creditCardInvoiceSchema.safeParse(input);
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Revise os dados da fatura.");
   }
 
-  if (!input.referenceMonth) {
-    return {
-      success: false as const,
+  const values = parsed.data;
 
-      message: "Selecione o mês da fatura.",
-    };
-  }
-
-  if (!Number.isFinite(input.amount) || input.amount <= 0) {
-    return {
-      success: false as const,
-
-      message: "Informe um valor válido para a fatura.",
-    };
-  }
-
-  try {
-    const { supabase } = await getHouseholdContext();
-
-    /*
-     * Front manda:
-     * 2026-08
-     *
-     * RPC recebe:
-     * 2026-08-01
-     */
-    const referenceMonth = `${input.referenceMonth}-01`;
-
-    const { data, error } = await supabase.rpc("create_credit_card_invoice", {
-      p_credit_card_id: input.creditCardId,
-
-      p_reference_month: referenceMonth,
-
-      p_amount: input.amount,
-    });
-
-    if (error) {
-      console.error("Erro ao criar fatura:", error);
-
-      return {
-        success: false as const,
-
-        message: error.message,
-      };
+  return withSession(async (context) => {
+    if (!(await belongsToHousehold(context, "accounts", values.creditCardId))) {
+      return fail("Cartão não encontrado.");
     }
 
-    revalidatePath("/contas");
+    const { data, error } = await context.supabase.rpc("create_credit_card_invoice", {
+      p_credit_card_id: values.creditCardId,
+      p_reference_month: `${values.referenceMonth}-01`,
+      p_amount: values.amount,
+    });
 
-    revalidatePath("/dashboard");
+    if (error) return dbError(error, "Não foi possível cadastrar a fatura.");
 
-    revalidatePath("/calendario");
-
-    revalidatePath("/historico");
-
-    return {
-      success: true as const,
-
-      message: "Fatura cadastrada com sucesso.",
-
-      expenseId: data ? String(data) : null,
-    };
-  } catch (error) {
-    console.error("Erro inesperado ao criar fatura:", error);
-
-    return {
-      success: false as const,
-
-      message: error instanceof Error ? error.message : "Não foi possível cadastrar a fatura.",
-    };
-  }
+    revalidateAreas("expenses");
+    return ok("Fatura cadastrada com sucesso.", { expenseId: data ? String(data) : null });
+  });
 }

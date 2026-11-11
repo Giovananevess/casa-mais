@@ -1,21 +1,12 @@
+import { formatCurrency } from "@/lib/currency";
+import { addMonths, firstDayOfMonth } from "@/lib/dates";
 import { getDashboardSummary } from "@/services/dashboard";
 import { getGoals } from "@/services/goals";
 
 import type { FinancialInsight } from "@/types/insights";
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
 function getPreviousMonth(referenceMonth: string) {
-  const [year, month] = referenceMonth.split("-").map(Number);
-
-  const date = new Date(Date.UTC(year, month - 2, 1));
-
-  return date.toISOString().slice(0, 10);
+  return firstDayOfMonth(addMonths(referenceMonth.slice(0, 7), -1));
 }
 
 export async function getFinancialInsights(): Promise<FinancialInsight[]> {

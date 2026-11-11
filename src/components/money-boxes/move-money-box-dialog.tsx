@@ -117,15 +117,6 @@ export function MoveMoneyBoxDialog({
     setLoading(true);
 
     try {
-      console.log("[CAIXINHA] movimentação:", {
-        moneyBoxId,
-        userId,
-        accountId: accountId || null,
-        type,
-        amount: parsedAmount,
-        date,
-      });
-
       const result = await moveMoneyBoxAction({
         moneyBoxId,
 
@@ -141,8 +132,6 @@ export function MoveMoneyBoxDialog({
 
         transactionDate: date,
       });
-
-      console.log("[CAIXINHA] resultado movimentação:", result);
 
       if (!result.success) {
         toast.error(result.message);

@@ -1,3 +1,4 @@
+import { currentMonth, firstDayOfMonth } from "@/lib/dates";
 import { getHouseholdContext } from "@/services/household-context";
 
 type FinancialAutomationResult = {
@@ -16,12 +17,7 @@ export async function runFinancialAutomations(): Promise<FinancialAutomationResu
   try {
     const { supabase, householdId } = await getHouseholdContext();
 
-    const today = new Date();
-
-    const referenceMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
-      2,
-      "0",
-    )}-01`;
+    const referenceMonth = firstDayOfMonth(currentMonth());
 
     /*
      * =====================================================
@@ -88,7 +84,7 @@ export async function runFinancialAutomations(): Promise<FinancialAutomationResu
   } catch (error) {
     /*
      * Como essa rotina roda pelo
-     * /api/finance/process, não queremos
+     * dashboard (FinancialAutomationTrigger), não queremos
      * quebrar o Dashboard caso a sessão
      * tenha expirado ou aconteça outro
      * erro de contexto.

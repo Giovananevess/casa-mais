@@ -4,34 +4,21 @@ import type {
   HistoryStatusFilter,
   HistoryTypeFilter,
 } from "@/types/history";
-
-function getLocalDateString(date: Date) {
-  const year = date.getFullYear();
-
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
+import { addMonths, currentMonth, firstDayOfMonth, isIsoDate, lastDayOfMonth } from "@/lib/dates";
 
 export function getDefaultHistoryPeriod() {
-  const today = new Date();
-
-  const start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const month = currentMonth();
 
   return {
-    startDate: getLocalDateString(start),
-    endDate: getLocalDateString(end),
+    startDate: firstDayOfMonth(addMonths(month, -5)),
+    endDate: lastDayOfMonth(month),
   };
 }
 
-function isValidDate(value?: string) {
-  return Boolean(
-    value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T12:00:00`)),
-  );
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID.test(value);
 }
 
 function normalizeStatus(value?: string): HistoryStatusFilter {
@@ -76,12 +63,12 @@ export function normalizeHistoryFilters(
   const defaults = getDefaultHistoryPeriod();
 
   const startDate =
-    typeof parameters.start === "string" && isValidDate(parameters.start)
+    typeof parameters.start === "string" && isIsoDate(parameters.start)
       ? parameters.start
       : defaults.startDate;
 
   const endDate =
-    typeof parameters.end === "string" && isValidDate(parameters.end)
+    typeof parameters.end === "string" && isIsoDate(parameters.end)
       ? parameters.end
       : defaults.endDate;
 
@@ -93,9 +80,9 @@ export function normalizeHistoryFilters(
 
     status: normalizeStatus(typeof parameters.status === "string" ? parameters.status : undefined),
 
-    categoryId: typeof parameters.category === "string" ? parameters.category : "all",
+    categoryId: isUuid(parameters.category) ? parameters.category : "all",
 
-    memberId: typeof parameters.member === "string" ? parameters.member : "all",
+    memberId: isUuid(parameters.member) ? parameters.member : "all",
 
     expenseType: normalizeType(typeof parameters.type === "string" ? parameters.type : undefined),
 

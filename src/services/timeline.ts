@@ -1,68 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
+import { getSessionContext } from "@/lib/auth/session";
+import { daysBetween, todayISO, toLocalISODate } from "@/lib/dates";
 
 import type { TimelineEvent, TimelineGroup } from "@/types/timeline";
 
-/*
- * O Supabase às vezes infere relacionamentos
- * aninhados como objeto e às vezes como array.
- *
- * Essa função garante que sempre trabalhemos
- * com apenas um objeto.
- */
-function firstRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) {
-    return null;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value;
-}
-
-async function getHouseholdContext() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Usuário não autenticado.");
-  }
-
-  const { data: membership, error } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Erro ao consultar a casa: ${error.message}`);
-  }
-
-  if (!membership) {
-    throw new Error("O usuário não pertence a uma casa.");
-  }
-
-  return {
-    supabase,
-    householdId: membership.household_id,
-  };
-}
-
 function getDateLabel(dateValue: string) {
   const date = new Date(dateValue);
-  const today = new Date();
-
-  const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-  const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-  const difference = Math.round(
-    (normalizedToday.getTime() - normalizedDate.getTime()) / 86_400_000,
-  );
+  const localDate = dateValue.length === 10 ? dateValue : toLocalISODate(date);
+  const difference = daysBetween(localDate, todayISO());
 
   if (difference === 0) {
     return "Hoje";
@@ -81,7 +26,7 @@ function getDateLabel(dateValue: string) {
 }
 
 export async function getTimeline(limit = 30): Promise<TimelineGroup[]> {
-  const { supabase, householdId } = await getHouseholdContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const [expensesResult, paymentsResult, contributionsResult, historyResult] = await Promise.all([
     supabase
@@ -383,7 +328,7 @@ export async function getTimeline(limit = 30): Promise<TimelineGroup[]> {
   const groups = new Map<string, TimelineEvent[]>();
 
   for (const event of selected) {
-    const key = new Date(event.date).toISOString().slice(0, 10);
+    const key = event.date.length === 10 ? event.date : toLocalISODate(event.date);
 
     const current = groups.get(key) ?? [];
 

@@ -1,90 +1,57 @@
+import {
+  addDays,
+  addMonths,
+  currentMonth,
+  firstDayOfMonth,
+  formatMonthLabel,
+  isIsoMonth,
+  lastDayOfMonth,
+  todayISO,
+  weekday,
+} from "@/lib/dates";
 import type { CalendarDayItem, CalendarExpense } from "@/types/calendar";
 
-export function getLocalDateString(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-export function getCurrentMonthString() {
-  const today = new Date();
-
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-}
+export { todayISO as getTodayString, currentMonth as getCurrentMonthString } from "@/lib/dates";
 
 export function normalizeMonthValue(value?: string) {
-  if (!value || !/^\d{4}-\d{2}$/.test(value)) {
-    return getCurrentMonthString();
+  if (!isIsoMonth(value)) {
+    return currentMonth();
   }
 
-  const [year, month] = value.split("-").map(Number);
+  const year = Number(value.slice(0, 4));
 
-  if (year < 2000 || year > 2100 || month < 1 || month > 12) {
-    return getCurrentMonthString();
-  }
-
-  return value;
+  return year >= 2000 && year <= 2100 ? value : currentMonth();
 }
 
+/** Intervalo semiaberto [início do mês, início do mês seguinte). */
 export function getMonthDateRange(monthValue: string) {
-  const [year, month] = monthValue.split("-").map(Number);
-
-  const start = new Date(year, month - 1, 1);
-  const nextMonth = new Date(year, month, 1);
-
   return {
-    startDate: getLocalDateString(start),
-    endDate: getLocalDateString(nextMonth),
+    startDate: firstDayOfMonth(monthValue),
+    endDate: firstDayOfMonth(addMonths(monthValue, 1)),
   };
 }
 
-export function getMonthLabel(monthValue: string) {
-  const [year, month] = monthValue.split("-").map(Number);
+export const getMonthLabel = formatMonthLabel;
 
-  const label = new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(year, month - 1, 1));
-
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-export function changeMonth(monthValue: string, amount: number) {
-  const [year, month] = monthValue.split("-").map(Number);
-
-  const date = new Date(year, month - 1 + amount, 1);
-
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
+export const changeMonth = addMonths;
 
 export function createCalendarDays(
   monthValue: string,
   expenses: CalendarExpense[],
 ): CalendarDayItem[] {
-  const [year, month] = monthValue.split("-").map(Number);
+  const firstDay = firstDayOfMonth(monthValue);
+  const daysInMonth = Number(lastDayOfMonth(monthValue).slice(8, 10));
 
-  const firstDay = new Date(year, month - 1, 1);
+  // Semana começando na segunda-feira (domingo = 0 vira 6).
+  const firstWeekday = weekday(firstDay);
+  const leadingDays = firstWeekday === 0 ? 6 : firstWeekday - 1;
 
-  const lastDay = new Date(year, month, 0);
+  const gridStart = addDays(firstDay, -leadingDays);
 
-  /*
-   * Converte domingo = 0 para uma semana
-   * iniciando na segunda-feira.
-   */
-  const leadingDays = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+  // Exibe sempre 5 ou 6 semanas completas.
+  const totalGridDays = leadingDays + daysInMonth <= 35 ? 35 : 42;
 
-  const gridStart = new Date(year, month - 1, 1 - leadingDays);
-
-  const totalUsedDays = leadingDays + lastDay.getDate();
-
-  /*
-   * Exibe sempre 5 ou 6 semanas completas.
-   */
-  const totalGridDays = totalUsedDays <= 35 ? 35 : 42;
-
-  const today = getLocalDateString(new Date());
+  const today = todayISO();
 
   const expensesByDate = new Map<string, CalendarExpense[]>();
 
@@ -97,16 +64,12 @@ export function createCalendarDays(
   }
 
   return Array.from({ length: totalGridDays }, (_, index) => {
-    const date = new Date(gridStart);
-
-    date.setDate(gridStart.getDate() + index);
-
-    const dateValue = getLocalDateString(date);
+    const dateValue = addDays(gridStart, index);
 
     return {
       date: dateValue,
-      dayNumber: date.getDate(),
-      isCurrentMonth: date.getMonth() === month - 1,
+      dayNumber: Number(dateValue.slice(8, 10)),
+      isCurrentMonth: dateValue.startsWith(monthValue),
       isToday: dateValue === today,
       expenses: expensesByDate.get(dateValue) ?? [],
     };

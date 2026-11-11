@@ -1,20 +1,10 @@
+import { cache } from "react";
+import { firstRelation } from "@/lib/supabase/relations";
 import { getHouseholdContext } from "@/services/household-context";
 
 import type { ExpenseFormOptions, ExpenseListItem } from "@/types/expenses";
 
-function firstRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) {
-    return null;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value;
-}
-
-export async function getExpenseFormOptions(): Promise<ExpenseFormOptions> {
+export const getExpenseFormOptions = cache(async (): Promise<ExpenseFormOptions> => {
   const { supabase, householdId } = await getHouseholdContext();
 
   const [categoriesResult, accountsResult, membersResult] = await Promise.all([
@@ -117,7 +107,7 @@ export async function getExpenseFormOptions(): Promise<ExpenseFormOptions> {
       };
     }),
   };
-}
+});
 
 export async function getExpenses(): Promise<ExpenseListItem[]> {
   const { supabase, householdId } = await getHouseholdContext();

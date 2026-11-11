@@ -4,11 +4,27 @@ import { FormEvent, useState } from "react";
 import { HouseHeart, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/cliente";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const AUTH_ERRORS: Record<string, string> = {
+  invalid_credentials: "E-mail ou senha incorretos.",
+  email_not_confirmed: "Confirme seu e-mail antes de entrar.",
+  over_request_rate_limit: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+  user_banned: "Este acesso está bloqueado.",
+};
+
+function getAuthErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "code" in error) {
+    const code = String((error as { code?: string }).code);
+    if (AUTH_ERRORS[code]) return AUTH_ERRORS[code];
+  }
+
+  return "Não foi possível entrar. Verifique seus dados e tente novamente.";
+}
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -32,16 +48,14 @@ export function LoginForm() {
       }
 
       if (!data.session) {
-        throw new Error("O Supabase não retornou uma sessão válida.");
+        throw new Error("Sessão inválida.");
       }
 
       toast.success("Login realizado com sucesso.");
 
       window.location.assign("/dashboard");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Não foi possível realizar o login.";
-
-      toast.error(message);
+      toast.error(getAuthErrorMessage(error));
       setIsLoading(false);
     }
   }

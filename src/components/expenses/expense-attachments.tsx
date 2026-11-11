@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, FileUp, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,7 +11,13 @@ import {
   registerAttachmentAction,
 } from "@/app/(app)/actions/attachments";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/cliente";
+import {
+  isAcceptedAttachmentType,
+  MAX_ATTACHMENT_SIZE,
+  RECEIPTS_BUCKET,
+  sanitizeFileName,
+} from "@/lib/attachments";
+import { createClient } from "@/lib/supabase/client";
 import type { ExpenseListItem } from "@/types/expenses";
 
 type ExpenseAttachmentsProps = {
@@ -19,17 +26,18 @@ type ExpenseAttachmentsProps = {
 
 export function ExpenseAttachments({ expense }: ExpenseAttachmentsProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
 
   async function uploadFile(file: File) {
-    if (file.size > 6 * 1024 * 1024) {
+    if (file.size > MAX_ATTACHMENT_SIZE) {
       toast.error("O arquivo deve ter no máximo 6 MB.");
       return;
     }
 
-    const acceptedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    const mimeType = file.type;
 
-    if (!acceptedTypes.includes(file.type)) {
+    if (!isAcceptedAttachmentType(mimeType)) {
       toast.error("Envie um arquivo PDF, JPG, PNG ou WEBP.");
       return;
     }
@@ -38,20 +46,19 @@ export function ExpenseAttachments({ expense }: ExpenseAttachmentsProps) {
 
     const supabase = createClient();
 
-    const safeName = file.name
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeName = sanitizeFileName(file.name);
 
     const filePath = [expense.household_id, expense.id, `${crypto.randomUUID()}-${safeName}`].join(
       "/",
     );
 
-    const { error: uploadError } = await supabase.storage.from("receipts").upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from(RECEIPTS_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
 
     if (uploadError) {
       setIsUploading(false);
@@ -61,15 +68,14 @@ export function ExpenseAttachments({ expense }: ExpenseAttachmentsProps) {
 
     const result = await registerAttachmentAction({
       expenseId: expense.id,
-      householdId: expense.household_id,
       fileName: file.name,
       filePath,
-      mimeType: file.type,
+      mimeType,
       fileSize: file.size,
     });
 
     if (!result.success) {
-      await supabase.storage.from("receipts").remove([filePath]);
+      await supabase.storage.from(RECEIPTS_BUCKET).remove([filePath]);
 
       setIsUploading(false);
       toast.error(result.message);
@@ -78,7 +84,7 @@ export function ExpenseAttachments({ expense }: ExpenseAttachmentsProps) {
 
     setIsUploading(false);
     toast.success(result.message);
-    window.location.reload();
+    router.refresh();
   }
 
   async function viewFile(filePath: string) {
@@ -101,7 +107,7 @@ export function ExpenseAttachments({ expense }: ExpenseAttachmentsProps) {
     }
 
     toast.success(result.message);
-    window.location.reload();
+    router.refresh();
   }
 
   return (

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { NoHousehold } from "@/components/layout/no-household";
+import { AuthError, getSessionContext } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AuthenticatedLayout({
@@ -9,16 +11,24 @@ export default async function AuthenticatedLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
+  let context;
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  try {
+    context = await getSessionContext();
+  } catch (error) {
+    if (!(error instanceof AuthError)) throw error;
 
-  if (error || !user) {
-    redirect("/login");
+    if (error.reason === "unauthenticated") redirect("/login");
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    return <NoHousehold email={user?.email ?? ""} />;
   }
+
+  const { supabase, user } = context;
 
   const { data: profile } = await supabase
     .from("profiles")

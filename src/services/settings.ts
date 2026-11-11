@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
+import { getSessionContext } from "@/lib/auth/session";
 
 import type {
   FinancePreferences,
@@ -8,48 +9,8 @@ import type {
   SettingsPageData,
 } from "@/types/settings";
 
-function firstRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) {
-    return null;
-  }
-
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value;
-}
-
-async function getContext() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    throw new Error("Usuário não autenticado.");
-  }
-
-  const { data: membership, error: membershipError } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (membershipError || !membership) {
-    throw new Error(membershipError?.message ?? "Casa não encontrada.");
-  }
-
-  return {
-    supabase,
-    householdId: membership.household_id,
-  };
-}
-
 export async function getSettingsPageData(): Promise<SettingsPageData> {
-  const { supabase, householdId } = await getContext();
+  const { supabase, householdId } = await getSessionContext();
 
   const [membersResult, cardsResult, recurringResult, preferencesResult] = await Promise.all([
     /*

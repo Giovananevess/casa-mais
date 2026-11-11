@@ -1,4 +1,4 @@
-import { getMonthDateRange, getLocalDateString } from "@/lib/calendar";
+import { getMonthDateRange, getTodayString } from "@/lib/calendar";
 
 import { getExpenseFormOptions } from "@/services/expenses";
 
@@ -9,7 +9,7 @@ import type { CalendarExpense, CalendarMonthSummary, CalendarPageData } from "@/
 import type { ExpenseListItem, ExpenseStatus } from "@/types/expenses";
 
 function getDisplayStatus(expense: ExpenseListItem): ExpenseStatus {
-  if (expense.status === "pending" && expense.due_date < getLocalDateString(new Date())) {
+  if (expense.status === "pending" && expense.due_date < getTodayString()) {
     return "overdue";
   }
 

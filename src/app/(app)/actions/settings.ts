@@ -1,164 +1,112 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import type { z } from "zod";
 
-import { createClient } from "@/lib/supabase/server";
+import { dbError, fail, invalid, ok, withSession, type ActionResult } from "@/lib/actions";
+import { revalidateAreas } from "@/lib/revalidate";
+import {
+  creditCardSettingsSchema,
+  financePreferencesSchema,
+  recurringIncomeSettingsSchema,
+} from "@/lib/validations/finance";
 
-function refreshSettings() {
-  revalidatePath("/configuracoes");
+export async function updateCreditCardAction(
+  input: z.input<typeof creditCardSettingsSchema>,
+): Promise<ActionResult> {
+  const parsed = creditCardSettingsSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados do cartão.");
 
-  revalidatePath("/contas-financeiras");
+  const values = parsed.data;
 
-  revalidatePath("/receitas");
+  return withSession(async ({ supabase, householdId }) => {
+    if (values.autoPayment && values.autoPaymentAccountId) {
+      const { data: payer, error: payerError } = await supabase
+        .from("accounts")
+        .select("account_type, is_active")
+        .eq("id", values.autoPaymentAccountId)
+        .eq("household_id", householdId)
+        .maybeSingle();
 
-  revalidatePath("/dashboard");
+      if (payerError) return dbError(payerError, "Não foi possível validar a conta pagadora.");
+      if (!payer || !payer.is_active) return fail("A conta de pagamento automático é inválida.");
+      if (payer.account_type === "credit_card") {
+        return fail("A conta pagadora não pode ser outro cartão de crédito.");
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("accounts")
+      .update({
+        closing_day: values.closingDay,
+        due_day: values.dueDay,
+        auto_payment: values.autoPayment,
+        auto_payment_account_id: values.autoPayment ? values.autoPaymentAccountId : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", values.cardId)
+      .eq("household_id", householdId)
+      .eq("account_type", "credit_card")
+      .select("id");
+
+    if (error) return dbError(error, "Não foi possível atualizar o cartão.");
+    if (!data?.length) return fail("Cartão não encontrado.");
+
+    revalidateAreas("settings");
+    return ok("Cartão atualizado.");
+  });
 }
 
-export async function updateCreditCardAction(input: {
-  cardId: string;
-  closingDay: number;
-  dueDay: number;
-  autoPayment: boolean;
-  autoPaymentAccountId: string | null;
-}) {
-  const supabase = await createClient();
+export async function updateRecurringIncomeAction(
+  input: z.input<typeof recurringIncomeSettingsSchema>,
+): Promise<ActionResult> {
+  const parsed = recurringIncomeSettingsSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados da receita recorrente.");
 
-  const { error } = await supabase
-    .from("accounts")
-    .update({
-      closing_day: input.closingDay,
+  const values = parsed.data;
 
-      due_day: input.dueDay,
+  return withSession(async ({ supabase, householdId }) => {
+    const { data, error } = await supabase
+      .from("recurring_income")
+      .update({
+        amount: values.amount,
+        day_of_month: values.dayOfMonth,
+        is_active: values.isActive,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", values.recurringIncomeId)
+      .eq("household_id", householdId)
+      .select("id");
 
-      auto_payment: input.autoPayment,
+    if (error) return dbError(error, "Não foi possível atualizar a receita recorrente.");
+    if (!data?.length) return fail("Receita recorrente não encontrada.");
 
-      auto_payment_account_id: input.autoPayment ? input.autoPaymentAccountId : null,
-
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.cardId);
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshSettings();
-
-  return {
-    success: true as const,
-    message: "Cartão atualizado.",
-  };
+    revalidateAreas("settings");
+    return ok("Receita recorrente atualizada.");
+  });
 }
 
-export async function updateRecurringIncomeAction(input: {
-  recurringIncomeId: string;
-  amount: number;
-  dayOfMonth: number;
-  isActive: boolean;
-}) {
-  const supabase = await createClient();
+export async function updateFinancePreferencesAction(
+  input: z.input<typeof financePreferencesSchema>,
+): Promise<ActionResult> {
+  const parsed = financePreferencesSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Preferências inválidas.");
 
-  if (input.amount <= 0) {
-    return {
-      success: false as const,
-      message: "Informe um valor válido.",
-    };
-  }
+  const values = parsed.data;
 
-  if (input.dayOfMonth < 1 || input.dayOfMonth > 31) {
-    return {
-      success: false as const,
-      message: "Informe um dia válido.",
-    };
-  }
+  return withSession(async ({ supabase, householdId }) => {
+    const { error } = await supabase.from("household_finance_settings").upsert(
+      {
+        household_id: householdId,
+        auto_process_finances: values.autoProcessFinances,
+        separate_benefits_from_cash: values.separateBenefitsFromCash,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "household_id" },
+    );
 
-  const { error } = await supabase
-    .from("recurring_income")
-    .update({
-      amount: input.amount,
+    if (error) return dbError(error, "Não foi possível salvar as preferências.");
 
-      day_of_month: input.dayOfMonth,
-
-      is_active: input.isActive,
-
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.recurringIncomeId);
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshSettings();
-
-  return {
-    success: true as const,
-    message: "Receita recorrente atualizada.",
-  };
-}
-
-export async function updateFinancePreferencesAction(input: {
-  autoProcessFinances: boolean;
-  separateBenefitsFromCash: boolean;
-}) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      success: false as const,
-      message: "Usuário não autenticado.",
-    };
-  }
-
-  const { data: membership } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!membership) {
-    return {
-      success: false as const,
-      message: "Casa não encontrada.",
-    };
-  }
-
-  const { error } = await supabase.from("household_finance_settings").upsert(
-    {
-      household_id: membership.household_id,
-
-      auto_process_finances: input.autoProcessFinances,
-
-      separate_benefits_from_cash: input.separateBenefitsFromCash,
-
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "household_id",
-    },
-  );
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshSettings();
-
-  return {
-    success: true as const,
-    message: "Preferências atualizadas.",
-  };
+    revalidateAreas("settings");
+    return ok("Preferências atualizadas.");
+  });
 }

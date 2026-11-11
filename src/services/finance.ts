@@ -1,3 +1,4 @@
+import { currentMonth } from "@/lib/dates";
 import { getHouseholdContext } from "@/services/household-context";
 
 import type { CreditCardInvoiceOption, FinancialAccount, IncomeItem } from "@/types/finance";
@@ -114,7 +115,7 @@ export async function getIncomeForMonth(month?: string): Promise<IncomeItem[]> {
    * Exemplo:
    * 2026-08
    */
-  const reference = month ?? new Date().toISOString().slice(0, 7);
+  const reference = month ?? currentMonth();
 
   const referenceMonth = `${reference}-01`;
 

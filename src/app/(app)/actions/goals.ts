@@ -2,213 +2,150 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
-
+import { dbError, fail, invalid, ok, uuid, withSession, type ActionResult } from "@/lib/actions";
+import { revalidateAreas } from "@/lib/revalidate";
 import { goalContributionSchema, goalSchema, updateGoalSchema } from "@/lib/validations/goals";
 
 function refreshGoalPages(goalId?: string) {
-  revalidatePath("/metas");
-  revalidatePath("/dashboard");
-  revalidatePath("/calendario");
-
-  if (goalId) {
-    revalidatePath(`/metas/${goalId}`);
-  }
+  revalidateAreas("goals");
+  if (goalId) revalidatePath(`/metas/${goalId}`);
 }
 
-export async function createGoalAction(input: unknown) {
-  const validation = goalSchema.safeParse(input);
+const nullable = (value: string | undefined | null) => value || null;
 
-  if (!validation.success) {
-    return {
-      success: false as const,
-      message: "Revise os dados da meta.",
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
-  }
+export async function createGoalAction(input: unknown): Promise<ActionResult<{ goalId: string }>> {
+  const parsed = goalSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados da meta.");
 
-  const values = validation.data;
-  const supabase = await createClient();
+  const values = parsed.data;
 
-  const { data, error } = await supabase.rpc("create_household_goal", {
-    p_name: values.name,
-    p_description: values.description || null,
-    p_icon: values.icon,
-    p_color: values.color,
-    p_target_amount: values.targetAmount,
-    p_initial_amount: values.initialAmount,
-    p_target_date: values.targetDate || null,
-    p_priority: values.priority,
+  return withSession(async ({ supabase }) => {
+    const { data, error } = await supabase.rpc("create_household_goal", {
+      p_name: values.name,
+      p_description: nullable(values.description),
+      p_icon: values.icon,
+      p_color: values.color,
+      p_target_amount: values.targetAmount,
+      p_initial_amount: values.initialAmount,
+      p_target_date: nullable(values.targetDate),
+      p_priority: values.priority,
+    });
+
+    if (error) return dbError(error, "Não foi possível criar a meta.");
+
+    const goalId = String(data);
+    refreshGoalPages(goalId);
+    return ok("Meta criada com sucesso.", { goalId });
   });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  const goalId = String(data);
-
-  refreshGoalPages(goalId);
-
-  return {
-    success: true as const,
-    goalId,
-    message: "Meta criada com sucesso.",
-  };
 }
 
-export async function updateGoalAction(input: unknown) {
-  const validation = updateGoalSchema.safeParse(input);
+export async function updateGoalAction(input: unknown): Promise<ActionResult> {
+  const parsed = updateGoalSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados informados.");
 
-  if (!validation.success) {
-    return {
-      success: false as const,
-      message: "Revise os dados informados.",
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
-  }
+  const values = parsed.data;
 
-  const values = validation.data;
-  const supabase = await createClient();
+  return withSession(async ({ supabase }) => {
+    const { error } = await supabase.rpc("update_household_goal", {
+      p_goal_id: values.goalId,
+      p_name: values.name,
+      p_description: nullable(values.description),
+      p_icon: values.icon,
+      p_color: values.color,
+      p_target_amount: values.targetAmount,
+      p_target_date: nullable(values.targetDate),
+      p_priority: values.priority,
+      p_status: values.status,
+    });
 
-  const { error } = await supabase.rpc("update_household_goal", {
-    p_goal_id: values.goalId,
-    p_name: values.name,
-    p_description: values.description || null,
-    p_icon: values.icon,
-    p_color: values.color,
-    p_target_amount: values.targetAmount,
-    p_target_date: values.targetDate || null,
-    p_priority: values.priority,
-    p_status: values.status,
+    if (error) return dbError(error, "Não foi possível atualizar a meta.");
+
+    refreshGoalPages(values.goalId);
+    return ok("Meta atualizada.");
   });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshGoalPages(values.goalId);
-
-  return {
-    success: true as const,
-    message: "Meta atualizada.",
-  };
 }
 
-export async function addGoalContributionAction(input: unknown) {
-  const validation = goalContributionSchema.safeParse(input);
+type ContributionRpcResult = {
+  contribution_id: string;
+  current_amount: number;
+  completed: boolean;
+};
 
-  if (!validation.success) {
-    return {
-      success: false as const,
-      message: "Revise os dados do aporte.",
-      fieldErrors: validation.error.flatten().fieldErrors,
-    };
-  }
+export async function addGoalContributionAction(
+  input: unknown,
+): Promise<ActionResult<{ completed: boolean; currentAmount: number }>> {
+  const parsed = goalContributionSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error, "Revise os dados do aporte.");
 
-  const values = validation.data;
-  const supabase = await createClient();
+  const values = parsed.data;
 
-  const { data, error } = await supabase.rpc("add_goal_contribution", {
-    p_goal_id: values.goalId,
-    p_user_id: values.userId,
-    p_amount: values.amount,
-    p_contribution_date: values.contributionDate,
-    p_notes: values.notes || null,
-    p_source_type: values.sourceType,
-    p_income_id: values.incomeId || null,
+  return withSession(async ({ supabase }) => {
+    const { data, error } = await supabase.rpc("add_goal_contribution", {
+      p_goal_id: values.goalId,
+      p_user_id: values.userId,
+      p_amount: values.amount,
+      p_contribution_date: values.contributionDate,
+      p_notes: nullable(values.notes),
+      p_source_type: values.sourceType,
+      p_income_id: values.incomeId || null,
+    });
+
+    if (error) return dbError(error, "Não foi possível registrar o aporte.");
+
+    refreshGoalPages(values.goalId);
+
+    const result = (data ?? {}) as Partial<ContributionRpcResult>;
+    const completed = Boolean(result.completed);
+
+    return ok(completed ? "Meta concluída! 🎉" : "Aporte registrado.", {
+      completed,
+      currentAmount: Number(result.current_amount ?? 0),
+    });
   });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshGoalPages(values.goalId);
-
-  const result = data as {
-    contribution_id: string;
-    current_amount: number;
-    completed: boolean;
-  };
-
-  return {
-    success: true as const,
-    message: result.completed ? "Meta concluída! 🎉" : "Aporte registrado.",
-    completed: result.completed,
-    currentAmount: Number(result.current_amount),
-  };
 }
 
-export async function deleteGoalContributionAction(contributionId: string, goalId: string) {
-  const supabase = await createClient();
-
-  const { error } = await supabase.rpc("delete_goal_contribution", {
-    p_contribution_id: contributionId,
-  });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
+export async function deleteGoalContributionAction(
+  contributionId: string,
+  goalId: string,
+): Promise<ActionResult> {
+  if (!uuid.safeParse(contributionId).success || !uuid.safeParse(goalId).success) {
+    return fail("Aporte inválido.");
   }
 
-  refreshGoalPages(goalId);
+  return withSession(async ({ supabase }) => {
+    const { error } = await supabase.rpc("delete_goal_contribution", {
+      p_contribution_id: contributionId,
+    });
 
-  return {
-    success: true as const,
-    message: "Aporte removido.",
-  };
+    if (error) return dbError(error, "Não foi possível remover o aporte.");
+
+    refreshGoalPages(goalId);
+    return ok("Aporte removido.");
+  });
 }
 
-export async function cancelGoalAction(goalId: string) {
-  const supabase = await createClient();
+export async function cancelGoalAction(goalId: string): Promise<ActionResult> {
+  if (!uuid.safeParse(goalId).success) return fail("Meta inválida.");
 
-  const { error } = await supabase.rpc("cancel_household_goal", {
-    p_goal_id: goalId,
+  return withSession(async ({ supabase }) => {
+    const { error } = await supabase.rpc("cancel_household_goal", { p_goal_id: goalId });
+
+    if (error) return dbError(error, "Não foi possível cancelar a meta.");
+
+    refreshGoalPages(goalId);
+    return ok("Meta cancelada.");
   });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshGoalPages(goalId);
-
-  return {
-    success: true as const,
-    message: "Meta cancelada.",
-  };
 }
 
-export async function deleteGoalAction(goalId: string) {
-  const supabase = await createClient();
+export async function deleteGoalAction(goalId: string): Promise<ActionResult> {
+  if (!uuid.safeParse(goalId).success) return fail("Meta inválida.");
 
-  const { error } = await supabase.rpc("delete_household_goal", {
-    p_goal_id: goalId,
+  return withSession(async ({ supabase }) => {
+    const { error } = await supabase.rpc("delete_household_goal", { p_goal_id: goalId });
+
+    if (error) return dbError(error, "Não foi possível excluir a meta.");
+
+    refreshGoalPages();
+    return ok("Meta excluída definitivamente.");
   });
-
-  if (error) {
-    return {
-      success: false as const,
-      message: error.message,
-    };
-  }
-
-  refreshGoalPages();
-
-  return {
-    success: true as const,
-    message: "Meta excluída definitivamente.",
-  };
 }

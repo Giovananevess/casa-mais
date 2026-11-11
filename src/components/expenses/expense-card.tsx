@@ -13,6 +13,7 @@ import { ExpenseAttachments } from "@/components/expenses/expense-attachments";
 import { formatCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
+import { EXPENSE_STATUS_LABELS } from "@/lib/labels";
 import type { ExpenseFormOptions, ExpenseListItem, ExpenseStatus } from "@/types/expenses";
 
 type ExpenseCardProps = {
@@ -20,12 +21,7 @@ type ExpenseCardProps = {
   options: ExpenseFormOptions;
 };
 
-const statusLabels: Record<ExpenseStatus, string> = {
-  pending: "Pendente",
-  paid: "Paga",
-  overdue: "Atrasada",
-  cancelled: "Cancelada",
-};
+const statusLabels = EXPENSE_STATUS_LABELS;
 
 function getStatusStyles(status: ExpenseStatus) {
   if (status === "paid") {

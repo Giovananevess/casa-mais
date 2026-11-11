@@ -78,8 +78,6 @@ export function CreateMoneyBoxDialog({ members, goals }: CreateMoneyBoxDialogPro
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    console.log("[CAIXINHA] submit disparado");
-
     if (!name.trim()) {
       toast.error("Informe o nome da caixinha.");
       return;
@@ -111,11 +109,7 @@ export function CreateMoneyBoxDialog({ members, goals }: CreateMoneyBoxDialogPro
         goalId: goalId || null,
       };
 
-      console.log("[CAIXINHA] payload:", payload);
-
       const result = await createMoneyBoxAction(payload);
-
-      console.log("[CAIXINHA] resultado:", result);
 
       if (!result.success) {
         toast.error(result.message);

@@ -1,11 +1,15 @@
+import { cache } from "react";
+import { addMonths, currentMonth, firstDayOfMonth, lastDayOfMonth } from "@/lib/dates";
 import { getHouseholdContext } from "@/services/household-context";
 
 import type { DashboardSummary, DashboardTrendItem } from "@/types/dashboard";
 
-export async function getDashboardSummary(referenceMonth?: string): Promise<DashboardSummary> {
+/**
+ * Resumo de um mês (`YYYY-MM-01`). Memoizado por requisição: a página e
+ * os insights pedem os mesmos meses, mas o banco é consultado uma vez só.
+ */
+const loadDashboardSummary = cache(async (selectedMonth: string): Promise<DashboardSummary> => {
   const { supabase } = await getHouseholdContext();
-
-  const selectedMonth = referenceMonth ?? new Date().toISOString().slice(0, 10);
 
   const { data, error } = await supabase.rpc("get_dashboard_summary", {
     selected_month: selectedMonth,
@@ -16,20 +20,20 @@ export async function getDashboardSummary(referenceMonth?: string): Promise<Dash
   }
 
   return data as DashboardSummary;
+});
+
+export function getDashboardSummary(referenceMonth?: string): Promise<DashboardSummary> {
+  return loadDashboardSummary(firstDayOfMonth(referenceMonth ?? currentMonth()));
 }
 
 export async function getDashboardTrend(): Promise<DashboardTrendItem[]> {
   const { supabase, householdId } = await getHouseholdContext();
 
-  const today = new Date();
+  const month = currentMonth();
 
-  const startDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+  const startDateString = firstDayOfMonth(addMonths(month, -5));
 
-  const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-  const startDateString = startDate.toISOString().slice(0, 10);
-
-  const endDateString = endDate.toISOString().slice(0, 10);
+  const endDateString = lastDayOfMonth(month);
 
   const [expensesResult, incomeResult] = await Promise.all([
     supabase
@@ -78,19 +82,16 @@ export async function getDashboardTrend(): Promise<DashboardTrendItem[]> {
       length: 6,
     },
     (_, index) => {
-      const date = new Date(today.getFullYear(), today.getMonth() - 5 + index, 1);
+      const key = addMonths(month, index - 5);
 
       return {
-        year: date.getFullYear(),
-
-        monthIndex: date.getMonth(),
-
-        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+        key,
 
         label: new Intl.DateTimeFormat("pt-BR", {
           month: "short",
+          timeZone: "UTC",
         })
-          .format(date)
+          .format(new Date(`${key}-15T12:00:00Z`))
           .replace(".", ""),
 
         income: 0,
@@ -100,29 +101,21 @@ export async function getDashboardTrend(): Promise<DashboardTrendItem[]> {
     },
   );
 
-  const monthMap = new Map(months.map((month) => [month.key, month]));
+  const monthMap = new Map(months.map((item) => [item.key, item]));
 
   for (const expense of expenses) {
-    const date = new Date(`${expense.due_date}T12:00:00`);
+    const bucket = monthMap.get(expense.due_date.slice(0, 7));
 
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-    const month = monthMap.get(key);
-
-    if (month) {
-      month.expenses += Number(expense.amount);
+    if (bucket) {
+      bucket.expenses += Number(expense.amount);
     }
   }
 
   for (const item of income) {
-    const date = new Date(`${item.income_date}T12:00:00`);
+    const bucket = monthMap.get(item.income_date.slice(0, 7));
 
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-    const month = monthMap.get(key);
-
-    if (month) {
-      month.income += Number(item.amount);
+    if (bucket) {
+      bucket.income += Number(item.amount);
     }
   }
 
