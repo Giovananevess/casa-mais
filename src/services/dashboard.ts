@@ -1,8 +1,21 @@
 import { cache } from "react";
-import { addMonths, currentMonth, firstDayOfMonth, lastDayOfMonth } from "@/lib/dates";
+import {
+  addMonths,
+  currentMonth,
+  firstDayOfMonth,
+  lastDayOfMonth,
+  monthRange,
+  todayISO,
+} from "@/lib/dates";
+import { firstRelation } from "@/lib/supabase/relations";
 import { getHouseholdContext } from "@/services/household-context";
 
-import type { DashboardSummary, DashboardTrendItem } from "@/types/dashboard";
+import type {
+  DashboardMonthMovements,
+  DashboardMovementExpense,
+  DashboardSummary,
+  DashboardTrendItem,
+} from "@/types/dashboard";
 
 /**
  * Resumo de um mês (`YYYY-MM-01`). Memoizado por requisição: a página e
@@ -126,4 +139,83 @@ export async function getDashboardTrend(): Promise<DashboardTrendItem[]> {
 
     expenses: item.expenses,
   }));
+}
+
+/**
+ * Contas e receitas do mês, usadas nos painéis de detalhe dos cards.
+ * As contas são filtradas pelo vencimento (como no calendário).
+ */
+export async function getMonthMovements(
+  month: string = currentMonth(),
+): Promise<DashboardMonthMovements> {
+  const { supabase, householdId } = await getHouseholdContext();
+  const { startDate, endDate } = monthRange(month);
+  const today = todayISO();
+
+  const [expensesResult, incomeResult] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select(
+        `
+        id,
+        title,
+        amount,
+        due_date,
+        paid_at,
+        status,
+        paid_by,
+        category:categories ( name, icon ),
+        paid_by_profile:profiles!expenses_paid_by_fkey ( name )
+      `,
+      )
+      .eq("household_id", householdId)
+      .gte("due_date", startDate)
+      .lte("due_date", endDate)
+      .neq("status", "cancelled")
+      .order("due_date", { ascending: true }),
+
+    supabase
+      .from("income")
+      .select("id, title, amount, income_date, income_type")
+      .eq("household_id", householdId)
+      .gte("income_date", startDate)
+      .lte("income_date", endDate)
+      .order("income_date", { ascending: false }),
+  ]);
+
+  if (expensesResult.error) {
+    throw new Error(`Erro ao carregar as contas do mês: ${expensesResult.error.message}`);
+  }
+
+  if (incomeResult.error) {
+    throw new Error(`Erro ao carregar as receitas do mês: ${incomeResult.error.message}`);
+  }
+
+  const expenses = (expensesResult.data ?? []).map((row) => {
+    const status = row.status as DashboardMovementExpense["status"];
+    const isOverdue = status === "overdue" || (status === "pending" && row.due_date < today);
+
+    return {
+      id: row.id,
+      title: row.title,
+      amount: Number(row.amount),
+      due_date: row.due_date,
+      paid_at: row.paid_at,
+      status,
+      display_status: status === "paid" ? "paid" : isOverdue ? "overdue" : "pending",
+      paid_by: row.paid_by,
+      category: firstRelation(row.category),
+      paid_by_profile: firstRelation(row.paid_by_profile),
+    } satisfies DashboardMovementExpense;
+  });
+
+  const income = (incomeResult.data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    amount: Number(row.amount),
+    income_date: row.income_date,
+    income_type: row.income_type,
+  }));
+
+  return { month, expenses, income };
 }

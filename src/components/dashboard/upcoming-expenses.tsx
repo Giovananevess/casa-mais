@@ -1,4 +1,9 @@
-import { CalendarClock, ChevronRight, CircleAlert, ReceiptText } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CalendarClock, CircleAlert, ReceiptText } from "lucide-react";
+
+import { QuickPayButton } from "@/components/expenses/quick-pay-button";
+import { Button } from "@/components/ui/button";
+import { daysBetween, todayISO } from "@/lib/dates";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { formatCurrency } from "@/lib/currency";
@@ -7,56 +12,45 @@ import type { DashboardSummary } from "@/types/dashboard";
 
 type UpcomingExpensesProps = {
   expenses: DashboardSummary["upcoming_expenses"];
+  currentUserId: string;
 };
 
 function getDueDateInformation(dateValue: string) {
-  const dueDate = new Date(`${dateValue}T12:00:00`);
-  const today = new Date();
+  const difference = daysBetween(todayISO(), dateValue);
 
-  today.setHours(12, 0, 0, 0);
+  if (difference === 0) return { label: "Vence hoje", urgent: true };
+  if (difference === 1) return { label: "Vence amanhã", urgent: true };
+  if (difference < 0) return { label: `${Math.abs(difference)} dia(s) em atraso`, urgent: true };
 
-  const difference = Math.round((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (difference === 0) {
-    return {
-      label: "Vence hoje",
-      urgent: true,
-    };
-  }
-
-  if (difference === 1) {
-    return {
-      label: "Vence amanhã",
-      urgent: true,
-    };
-  }
-
-  if (difference < 0) {
-    return {
-      label: `${Math.abs(difference)} dia(s) em atraso`,
-      urgent: true,
-    };
-  }
-
-  return {
-    label: `Vence dia ${dueDate.getDate()}`,
-    urgent: false,
-  };
+  return { label: `Vence dia ${Number(dateValue.slice(8, 10))}`, urgent: false };
 }
 
-export function UpcomingExpenses({ expenses }: UpcomingExpensesProps) {
+export function UpcomingExpenses({ expenses, currentUserId }: UpcomingExpensesProps) {
   return (
     <article className="bg-card rounded-3xl border p-5 shadow-sm transition duration-300 hover:shadow-lg hover:shadow-black/5 sm:p-6">
-      <div>
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
-          Atenção
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+            Atenção
+          </p>
 
-        <h2 className="mt-2 text-xl font-semibold tracking-tight">Próximas contas</h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">Próximas contas</h2>
 
-        <p className="text-muted-foreground mt-1 text-sm">
-          Vencimentos que precisam ser acompanhados.
-        </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Vencimentos que precisam ser acompanhados.
+          </p>
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 rounded-full"
+          nativeButton={false}
+          render={<Link href="/contas" />}
+        >
+          Ver todas
+          <ArrowRight />
+        </Button>
       </div>
 
       {expenses.length === 0 ? (
@@ -113,10 +107,19 @@ export function UpcomingExpenses({ expenses }: UpcomingExpensesProps) {
                   </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <p className="font-semibold">{formatCurrency(Number(expense.amount))}</p>
+                <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                  <p className="font-semibold tabular-nums">
+                    {formatCurrency(Number(expense.amount))}
+                  </p>
 
-                  <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
+                  {expense.status !== "paid" && (
+                    <QuickPayButton
+                      size="xs"
+                      expenseId={expense.id}
+                      title={expense.title}
+                      paidBy={currentUserId}
+                    />
+                  )}
                 </div>
               </div>
             );

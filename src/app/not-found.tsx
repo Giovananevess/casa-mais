@@ -16,7 +16,7 @@ export default function NotFound() {
         O endereço que você tentou acessar não existe ou foi removido.
       </p>
 
-      <Button className="mt-6" render={<Link href="/dashboard" />}>
+      <Button className="mt-6" nativeButton={false} render={<Link href="/dashboard" />}>
         Voltar para o início
       </Button>
     </main>

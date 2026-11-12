@@ -35,3 +35,32 @@ export type DashboardTrendItem = {
   income: number;
   expenses: number;
 };
+
+export type DashboardMovementExpense = {
+  id: string;
+  title: string;
+  amount: number;
+  due_date: string;
+  paid_at: string | null;
+  status: "pending" | "paid" | "overdue" | "cancelled";
+  display_status: "pending" | "paid" | "overdue";
+  paid_by: string | null;
+  category: { name: string; icon: string | null } | null;
+  paid_by_profile: { name: string } | null;
+};
+
+export type DashboardMovementIncome = {
+  id: string;
+  title: string;
+  amount: number;
+  income_date: string;
+  income_type: string;
+};
+
+export type DashboardMonthMovements = {
+  month: string;
+  expenses: DashboardMovementExpense[];
+  income: DashboardMovementIncome[];
+};
+
+export type DashboardDetailKind = "balance" | "paid" | "pending" | "savings";

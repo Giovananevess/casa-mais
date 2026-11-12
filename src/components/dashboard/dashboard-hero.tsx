@@ -1,5 +1,7 @@
+import Link from "next/link";
 import {
   ArrowDownRight,
+  ChevronRight,
   ArrowUpRight,
   CalendarDays,
   CheckCircle2,
@@ -9,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/currency";
+import { formatMonthLabel } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 type DashboardHeroProps = {
@@ -45,14 +48,7 @@ function getGreeting() {
 }
 
 function getMonthLabel(referenceMonth: string) {
-  const date = new Date(`${referenceMonth}T12:00:00`);
-
-  const label = new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
-    year: "numeric",
-  }).format(date);
-
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  return formatMonthLabel(referenceMonth.slice(0, 7));
 }
 
 function getFinancialMessage({
@@ -241,28 +237,43 @@ export function DashboardHero({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-white/10">
-                <ArrowUpRight className="size-4" />
+            <Link
+              href="/receitas"
+              className="group/tile block rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-white/10">
+                  <ArrowUpRight className="size-4" />
+                </div>
+                <ChevronRight className="size-4 text-white/30 transition group-hover/tile:translate-x-0.5 group-hover/tile:text-white/70" />
               </div>
 
               <p className="mt-4 text-xs text-white/50">Receitas</p>
 
               <p className="mt-1 truncate text-lg font-semibold">{formatCurrency(income)}</p>
-            </div>
+            </Link>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-white/10">
-                <ArrowDownRight className="size-4" />
+            <Link
+              href="/contas"
+              className="group/tile block rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-white/10">
+                  <ArrowDownRight className="size-4" />
+                </div>
+                <ChevronRight className="size-4 text-white/30 transition group-hover/tile:translate-x-0.5 group-hover/tile:text-white/70" />
               </div>
 
               <p className="mt-4 text-xs text-white/50">Despesas</p>
 
               <p className="mt-1 truncate text-lg font-semibold">{formatCurrency(expenses)}</p>
-            </div>
+            </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md sm:col-span-2 xl:col-span-1">
+          <Link
+            href="/contas"
+            className="group/tile block rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none sm:col-span-2 xl:col-span-1"
+          >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-white/10">
@@ -282,9 +293,13 @@ export function DashboardHero({
                 </div>
               </div>
 
-              {pending === 0 && hasMovement && <CheckCircle2 className="size-5 text-emerald-300" />}
+              {pending === 0 && hasMovement ? (
+                <CheckCircle2 className="size-5 text-emerald-300" />
+              ) : (
+                <ChevronRight className="size-4 text-white/30 transition group-hover/tile:translate-x-0.5 group-hover/tile:text-white/70" />
+              )}
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </section>

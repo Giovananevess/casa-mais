@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Minus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,6 +18,8 @@ type SummaryCardProps = {
   icon: LucideIcon;
   tone?: CardTone;
   trend?: SummaryCardTrend | null;
+  /** Mostra a indicação de que o card abre detalhes ao clicar. */
+  interactive?: boolean;
   className?: string;
 };
 
@@ -57,6 +59,7 @@ export function SummaryCard({
   icon: Icon,
   tone = "neutral",
   trend,
+  interactive = false,
   className,
 }: SummaryCardProps) {
   const styles = toneStyles[tone];
@@ -65,11 +68,12 @@ export function SummaryCard({
     trend && trend.value > 0 ? ArrowUpRight : trend && trend.value < 0 ? ArrowDownRight : Minus;
 
   return (
-    <article
+    <div
       className={cn(
         "group bg-card relative isolate overflow-hidden rounded-3xl border p-5 shadow-sm",
         "transition duration-300 ease-out",
         "hover:border-foreground/10 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5",
+        interactive && "active:translate-y-0 active:scale-[0.99]",
         className,
       )}
     >
@@ -115,16 +119,21 @@ export function SummaryCard({
             <span className="text-muted-foreground text-xs">{trend.label}</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
-              <Minus className="size-3.5" />
-              Sem histórico
-            </span>
-          </div>
+          <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+            <Minus className="size-3.5" />
+            Sem dados do mês anterior para comparar
+          </p>
         )}
 
         <p className="text-muted-foreground mt-3 text-xs leading-relaxed">{description}</p>
       </div>
-    </article>
+
+      {interactive && (
+        <span className="text-muted-foreground group-hover:text-foreground mt-4 inline-flex items-center gap-1 text-xs font-medium transition-colors">
+          Ver detalhes
+          <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      )}
+    </div>
   );
 }
