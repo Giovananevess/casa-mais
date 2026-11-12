@@ -60,7 +60,7 @@ export async function getTimeline(limit = 30): Promise<TimelineGroup[]> {
       id,
       amount,
       payment_date,
-      expense:expenses!payments_expense_id_fkey (
+      expense:expenses!payments_expense_id_fkey!inner (
         id,
         title,
         household_id
@@ -70,6 +70,8 @@ export async function getTimeline(limit = 30): Promise<TimelineGroup[]> {
       )
     `,
       )
+      // payments não tem household_id: filtra pela conta (inner join no banco).
+      .eq("expense.household_id", householdId)
       .order("payment_date", {
         ascending: false,
       })

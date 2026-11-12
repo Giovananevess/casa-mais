@@ -4,9 +4,28 @@
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `schema.sql`                                       | Referência das tabelas do schema `public` (exportado em 2026-11-12). Só leitura, não execute.    |
 | `migrations/20261112000000_alinhar_schema_com_app.sql` | Corrige incompatibilidades entre banco e app e adiciona índices. **Precisa ser aplicada.**   |
+| `migrations/20261112010000_corrigir_rls.sql`       | Fecha políticas de RLS que deixavam dados de todas as casas abertos. **Precisa ser aplicada.** |
 
-Ainda faltam no repositório as **políticas de RLS, as funções (RPC), os triggers
-e as políticas de storage**. Veja "Exportar o que falta" abaixo.
+Ainda faltam no repositório as **funções (RPC) e os triggers**. Veja "Exportar o que falta" abaixo.
+
+## Revisão de RLS (2026-11-12)
+
+A maioria das tabelas já usa `is_household_member(household_id)`. A migration
+`20261112010000_corrigir_rls.sql` corrige o que estava aberto para **qualquer
+usuário autenticado, de qualquer casa**:
+
+| Tabela                | Antes                  | Depois                                       |
+| --------------------- | ---------------------- | -------------------------------------------- |
+| `payments`            | `true` (ler/editar/apagar tudo) | membros da casa da conta (`expenses`) |
+| `expense_splits`      | `true`                 | membros da casa da conta                     |
+| `monthly_settlements` | `true`                 | só pagador ou recebedor                      |
+| `money_boxes`         | sem política listada   | membros da casa                              |
+| `categories`          | `true` (via-se as de outras casas) | globais + as da própria casa     |
+| `profiles`            | `true` (todos os usuários) | o próprio + quem mora na mesma casa      |
+
+Testado em Postgres 16 simulando duas casas: antes, um usuário da casa B
+conseguia apagar pagamentos da casa A; depois, não vê nem altera nada dela.
+As políticas de storage do bucket `receipts` já estavam corretas.
 
 ## Aplicar a migration
 
