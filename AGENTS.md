@@ -13,4 +13,4 @@ Examples already hit in this repo: middleware is `src/proxy.ts` (exported `proxy
 - Dates: use `@/lib/dates` (`todayISO`, `currentMonth`, `addMonths`, …). Never derive the calendar day from `toISOString()`.
 - Labels for enums live in `@/lib/labels`.
 - Before finishing: `npm run check` and `npm run build` (build needs the two `NEXT_PUBLIC_SUPABASE_*` env vars; dummy values work).
-- The database schema is not versioned yet; see `supabase/README.md` for the expected tables, RPCs and storage contract.
+- Database: `supabase/schema.sql` is a read-only reference of the tables; changes go in `supabase/migrations/`. RLS, RPC bodies and storage policies are not versioned yet — see `supabase/README.md`.
